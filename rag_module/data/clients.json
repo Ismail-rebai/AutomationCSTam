@@ -1,0 +1,198 @@
+[
+  {
+    "client_id": "CLIENT-001",
+    "name": "Banque Nationale Agricole (BNA)",
+    "sector": "Banking & Finance",
+    "type": "public",
+    "country": "Tunisia",
+    "description": "One of Tunisia's largest state-owned banks specializing in agricultural and commercial banking. Major client for digital transformation and cybersecurity initiatives.",
+    "engagements": [
+      {
+        "project_id": "PROJ-001",
+        "year": 2024,
+        "scope": "Core banking system migration to microservices architecture",
+        "satisfaction": "excellent"
+      },
+      {
+        "project_id": "PROJ-010",
+        "year": 2025,
+        "scope": "Comprehensive cybersecurity audit and ISO 27001 readiness",
+        "satisfaction": "excellent"
+      }
+    ],
+    "relationship_since": 2022,
+    "key_contacts": ["IT Director", "CISO"],
+    "technologies_deployed": ["Java", "Spring Boot", "Oracle", "Kubernetes", "Nessus", "SIEM"],
+    "outcomes_summary": "Successfully modernized core banking with zero downtime and achieved ISO 27001 readiness. Long-term partnership for ongoing maintenance and security monitoring."
+  },
+  {
+    "client_id": "CLIENT-002",
+    "name": "Tunisie Telecom",
+    "sector": "Telecommunications",
+    "type": "public",
+    "country": "Tunisia",
+    "description": "Tunisia's incumbent telecommunications operator providing fixed-line, mobile, and internet services to millions of subscribers. Key partner for digital customer experience and DevOps transformation.",
+    "engagements": [
+      {
+        "project_id": "PROJ-002",
+        "year": 2023,
+        "scope": "Self-service customer portal development",
+        "satisfaction": "good"
+      },
+      {
+        "project_id": "PROJ-011",
+        "year": 2025,
+        "scope": "DevOps pipeline and CI/CD infrastructure setup",
+        "satisfaction": "excellent"
+      }
+    ],
+    "relationship_since": 2023,
+    "key_contacts": ["CTO", "VP Engineering"],
+    "technologies_deployed": ["Angular", "Node.js", "Docker", "Kubernetes", "Jenkins", "Terraform"],
+    "outcomes_summary": "Delivered customer-facing portal serving 500K+ users and modernized development practices with daily deployment capability."
+  },
+  {
+    "client_id": "CLIENT-003",
+    "name": "CNSS (Caisse Nationale de Sécurité Sociale)",
+    "sector": "Government & Social Services",
+    "type": "public",
+    "country": "Tunisia",
+    "description": "Tunisia's national social security fund managing pension, healthcare, and social insurance for millions of citizens. Major e-government modernization client.",
+    "engagements": [
+      {
+        "project_id": "PROJ-003",
+        "year": 2023,
+        "scope": "Social security management platform development",
+        "satisfaction": "good"
+      },
+      {
+        "project_id": "PROJ-009",
+        "year": 2025,
+        "scope": "Data analytics and fraud detection platform",
+        "satisfaction": "excellent"
+      }
+    ],
+    "relationship_since": 2022,
+    "key_contacts": ["Director of IT", "Head of Operations"],
+    "technologies_deployed": ["C#", "ASP.NET Core", "SQL Server", "Python", "Spark", "Tableau"],
+    "outcomes_summary": "Automated 80% of manual social security workflows and deployed ML-based fraud detection identifying 12% fraudulent declarations."
+  },
+  {
+    "client_id": "CLIENT-004",
+    "name": "Groupe Poulina",
+    "sector": "Manufacturing & Industry",
+    "type": "private",
+    "country": "Tunisia",
+    "description": "One of Tunisia's largest private industrial conglomerates with 12 subsidiaries spanning food processing, packaging, ceramics, and real estate. Strategic SAP and supply chain digitalization partner.",
+    "engagements": [
+      {
+        "project_id": "PROJ-004",
+        "year": 2024,
+        "scope": "SAP S/4HANA implementation across finance and supply chain",
+        "satisfaction": "good"
+      },
+      {
+        "project_id": "PROJ-012",
+        "year": 2024,
+        "scope": "Supply chain management portal with SAP integration",
+        "satisfaction": "excellent"
+      }
+    ],
+    "relationship_since": 2023,
+    "key_contacts": ["Group CIO", "Supply Chain Director"],
+    "technologies_deployed": ["SAP S/4HANA", "SAP ABAP", "Angular", "Spring Boot", "PostgreSQL"],
+    "outcomes_summary": "Unified ERP operations across 12 subsidiaries and achieved 98% inventory accuracy with real-time supply chain visibility."
+  },
+  {
+    "client_id": "CLIENT-005",
+    "name": "STEG (Société Tunisienne d'Électricité et de Gaz)",
+    "sector": "Energy & Utilities",
+    "type": "public",
+    "country": "Tunisia",
+    "description": "Tunisia's national electricity and gas utility managing generation, transmission, and distribution. Major client for IoT-based smart grid and GIS mapping initiatives.",
+    "engagements": [
+      {
+        "project_id": "PROJ-005",
+        "year": 2025,
+        "scope": "Real-time smart metering dashboard with IoT data pipeline",
+        "satisfaction": "excellent"
+      },
+      {
+        "project_id": "PROJ-013",
+        "year": 2025,
+        "scope": "GIS mapping system for distribution network",
+        "satisfaction": "good"
+      }
+    ],
+    "relationship_since": 2024,
+    "key_contacts": ["Director of Smart Grid", "GIS Manager"],
+    "technologies_deployed": ["React", "Python", "FastAPI", "PostGIS", "Kafka", "QGIS", "Leaflet"],
+    "outcomes_summary": "Enabled real-time monitoring of 100K+ smart meters and complete GIS mapping of 50K+ km distribution network."
+  },
+  {
+    "client_id": "CLIENT-006",
+    "name": "Ministère de la Santé (Ministry of Health)",
+    "sector": "Government & Healthcare",
+    "type": "public",
+    "country": "Tunisia",
+    "description": "Tunisian Ministry of Health managing public hospitals and healthcare policy. Client for national health records digitalization conforming to HL7 FHIR standards.",
+    "engagements": [
+      {
+        "project_id": "PROJ-006",
+        "year": 2024,
+        "scope": "National digital health records management system",
+        "satisfaction": "excellent"
+      }
+    ],
+    "relationship_since": 2024,
+    "key_contacts": ["Director of Health IT", "Chief Medical Officer"],
+    "technologies_deployed": ["Java", "Spring Boot", "PostgreSQL", "HL7 FHIR", "Keycloak"],
+    "outcomes_summary": "Deployed electronic health records across 25 public hospitals digitizing 3 million patient records."
+  },
+  {
+    "client_id": "CLIENT-007",
+    "name": "BIAT (Banque Internationale Arabe de Tunisie)",
+    "sector": "Banking & Finance",
+    "type": "private",
+    "country": "Tunisia",
+    "description": "Tunisia's largest private bank with extensive retail and corporate banking operations. Strategic partner for mobile banking and regulatory compliance solutions.",
+    "engagements": [
+      {
+        "project_id": "PROJ-007",
+        "year": 2025,
+        "scope": "Cross-platform mobile banking application",
+        "satisfaction": "excellent"
+      },
+      {
+        "project_id": "PROJ-014",
+        "year": 2025,
+        "scope": "Regulatory reporting automation (COREP, FINREP)",
+        "satisfaction": "good"
+      }
+    ],
+    "relationship_since": 2024,
+    "key_contacts": ["CTO", "Head of Compliance"],
+    "technologies_deployed": ["Flutter", "Firebase", "C#", "ASP.NET Core", "Power BI", "SSRS"],
+    "outcomes_summary": "Mobile banking app with 150K+ downloads and 100% regulatory compliance with automated Central Bank reporting."
+  },
+  {
+    "client_id": "CLIENT-008",
+    "name": "Ooredoo Tunisia",
+    "sector": "Telecommunications",
+    "type": "private",
+    "country": "Tunisia",
+    "description": "Major mobile telecommunications operator in Tunisia, part of the Ooredoo Group. Client for CRM modernization and Salesforce platform implementation.",
+    "engagements": [
+      {
+        "project_id": "PROJ-008",
+        "year": 2024,
+        "scope": "CRM migration to Salesforce Sales Cloud and Service Cloud",
+        "satisfaction": "good"
+      }
+    ],
+    "relationship_since": 2024,
+    "key_contacts": ["VP Customer Experience", "IT Director"],
+    "technologies_deployed": ["Salesforce", "Apex", "Lightning Web Components", "MuleSoft"],
+    "outcomes_summary": "Unified customer view for 3 million subscribers with 20% reduction in sales cycle time and 30% improvement in service resolution."
+  }
+]

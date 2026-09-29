@@ -1,0 +1,90 @@
+{
+  "name": "OliveSoft RAG Demo - Simulated Feed",
+  "nodes": [
+    {
+      "parameters": {
+        "rule": {
+          "interval": [{"field": "minutes", "minutesInterval": 5}]
+        }
+      },
+      "id": "cron-trigger",
+      "name": "Every 5 Minutes",
+      "type": "n8n-nodes-base.scheduleTrigger",
+      "typeVersion": 1,
+      "position": [250, 300],
+      "notes": "Simulates periodic tender feed checking for demo purposes."
+    },
+    {
+      "parameters": {
+        "url": "={{ $env.INGEST_API_URL || 'http://localhost:8002' }}/tenders",
+        "method": "GET",
+        "options": {}
+      },
+      "id": "check-existing",
+      "name": "Check Existing Tenders",
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4,
+      "position": [450, 300]
+    },
+    {
+      "parameters": {
+        "jsCode": "// Simulated feed: 7 stub tenders\nconst stubs = [\n  {id: 'TENDER-001', source: 'simulated', description: 'Acquisition de matériels et logiciels informatiques', llm_classified: true},\n  {id: 'TENDER-002', source: 'simulated', description: 'Développement d\\'un portail web citoyen', llm_classified: true},\n  {id: 'TENDER-003', source: 'simulated', description: 'Migration du système bancaire vers microservices', llm_classified: true},\n  {id: 'TENDER-004', source: 'simulated', description: 'Mise en place ERP SAP S/4HANA', llm_classified: true},\n  {id: 'TENDER-005', source: 'simulated', description: 'Application mobile de transport public', llm_classified: true},\n  {id: 'TENDER-006', source: 'simulated', description: 'Audit de cybersécurité ISO 27001', llm_classified: true},\n  {id: 'TENDER-007', source: 'simulated', description: 'Plateforme analyse de données santé', llm_classified: true},\n];\n\n// Filter out already-ingested ones\nconst existingIds = new Set($input.all().map(i => i.json?.tender_id).filter(Boolean));\nconst newTenders = stubs.filter(t => !existingIds.has(t.id));\n\nreturn newTenders.map(t => ({json: t}));"
+      },
+      "id": "simulated-feed",
+      "name": "Simulated Feed (Code)",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [650, 300],
+      "notes": "Simulates a tender feed. Replace with real source in production."
+    },
+    {
+      "parameters": {
+        "url": "={{ $env.INGEST_API_URL || 'http://localhost:8002' }}/tenders/ingest",
+        "method": "POST",
+        "body": {
+          "items": ["={{ [$json] }}"]
+        },
+        "sendBody": true,
+        "bodyContentType": "json"
+      },
+      "id": "ingest",
+      "name": "Ingest Tender",
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4,
+      "position": [850, 300]
+    },
+    {
+      "parameters": {
+        "url": "={{ $env.RAG_API_URL || 'http://localhost:8001' }}/match-tender",
+        "method": "POST",
+        "body": {
+          "tender_id": "={{ $json.results[0].tender_id }}",
+          "requirements": [{"req_id": "R1", "text": "={{ $json.results[0].tender_id }}", "tech_keywords": []}],
+          "top_k": 5
+        },
+        "sendBody": true,
+        "bodyContentType": "json"
+      },
+      "id": "match",
+      "name": "Match Tender",
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4,
+      "position": [1050, 300]
+    }
+  ],
+  "connections": {
+    "Every 5 Minutes": {
+      "main": [[{"node": "Check Existing Tenders", "type": "main", "index": 0}]]
+    },
+    "Check Existing Tenders": {
+      "main": [[{"node": "Simulated Feed (Code)", "type": "main", "index": 0}]]
+    },
+    "Simulated Feed (Code)": {
+      "main": [[{"node": "Ingest Tender", "type": "main", "index": 0}]]
+    },
+    "Ingest Tender": {
+      "main": [[{"node": "Match Tender", "type": "main", "index": 0}]]
+    }
+  },
+  "settings": {"executionOrder": "v1"}
+}
