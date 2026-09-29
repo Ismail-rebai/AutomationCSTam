@@ -1,0 +1,451 @@
+{
+  "config": {
+    "backend": "TfidfBackend",
+    "fusion_method": "rrf",
+    "dense_weight": 0.5,
+    "top_k": 10,
+    "min_score": 0.0,
+    "record_count": 68
+  },
+  "overall": {
+    "count": 17,
+    "avg_precision_at_k": 0.2552,
+    "avg_recall_at_k": 0.5814,
+    "avg_mrr": 0.6196,
+    "avg_ndcg_at_k": 0.5503,
+    "hit_rate": 0.7059
+  },
+  "per_tier": {
+    "exact": {
+      "count": 8,
+      "avg_precision_at_k": 0.3286,
+      "avg_recall_at_k": 1.0,
+      "avg_mrr": 0.9167,
+      "avg_ndcg_at_k": 0.9237,
+      "hit_rate": 1.0
+    },
+    "paraphrase_semantic": {
+      "count": 6,
+      "avg_precision_at_k": 0.0516,
+      "avg_recall_at_k": 0.1389,
+      "avg_mrr": 0.2,
+      "avg_ndcg_at_k": 0.1177,
+      "hit_rate": 0.3333
+    },
+    "ambiguous_any_of": {
+      "count": 3,
+      "avg_precision_at_k": 0.4667,
+      "avg_recall_at_k": 0.35,
+      "avg_mrr": 0.6667,
+      "avg_ndcg_at_k": 0.4197,
+      "hit_rate": 0.6667
+    },
+    "no_match_expected": {
+      "count": 2,
+      "true_negative_rate": 0.5,
+      "avg_top_score": 0.02459
+    }
+  },
+  "details": [
+    {
+      "case_id": "GOLD-001",
+      "difficulty": "exact",
+      "query": "Développement Java Spring Boot pour système bancaire",
+      "precision_at_k": 0.3,
+      "recall_at_k": 1.0,
+      "mrr": 0.3333333333333333,
+      "ndcg_at_k": 0.6182885020492784,
+      "hit": true,
+      "top_score": 0.03278688524590164,
+      "expected_ids": [
+        "CV-001",
+        "PROJ-001",
+        "CV-003"
+      ],
+      "retrieved_ids": [
+        "TECH-002",
+        "TECH-001",
+        "CV-003",
+        "CV-001",
+        "PROJ-001"
+      ]
+    },
+    {
+      "case_id": "GOLD-002",
+      "difficulty": "exact",
+      "query": "Consultant SAP FI/CO avec certification",
+      "precision_at_k": 0.42857142857142855,
+      "recall_at_k": 1.0,
+      "mrr": 1.0,
+      "ndcg_at_k": 0.9674679834891693,
+      "hit": true,
+      "top_score": 0.03278688524590164,
+      "expected_ids": [
+        "PROJ-004",
+        "CV-007",
+        "CV-008"
+      ],
+      "retrieved_ids": [
+        "CV-007",
+        "CV-008",
+        "TECH-007",
+        "PROJ-004",
+        "CV-018"
+      ]
+    },
+    {
+      "case_id": "GOLD-003",
+      "difficulty": "exact",
+      "query": "Développeur Salesforce Apex Lightning",
+      "precision_at_k": 0.4,
+      "recall_at_k": 1.0,
+      "mrr": 1.0,
+      "ndcg_at_k": 0.9197207891481876,
+      "hit": true,
+      "top_score": 0.03278688524590164,
+      "expected_ids": [
+        "CV-017",
+        "PROJ-008"
+      ],
+      "retrieved_ids": [
+        "CV-017",
+        "TECH-009",
+        "PROJ-008",
+        "CLIENT-008",
+        "CV-018"
+      ]
+    },
+    {
+      "case_id": "GOLD-004",
+      "difficulty": "exact",
+      "query": "Docker Kubernetes CI/CD pipeline",
+      "precision_at_k": 0.4,
+      "recall_at_k": 1.0,
+      "mrr": 1.0,
+      "ndcg_at_k": 0.8838242945899706,
+      "hit": true,
+      "top_score": 0.03278688524590164,
+      "expected_ids": [
+        "CV-014",
+        "TECH-011",
+        "TECH-010",
+        "PROJ-011"
+      ],
+      "retrieved_ids": [
+        "PROJ-011",
+        "TECH-016",
+        "CV-014",
+        "TECH-010",
+        "CLIENT-002"
+      ]
+    },
+    {
+      "case_id": "GOLD-005",
+      "difficulty": "exact",
+      "query": "Oracle database administration performance tuning",
+      "precision_at_k": 0.2,
+      "recall_at_k": 1.0,
+      "mrr": 1.0,
+      "ndcg_at_k": 1.0,
+      "hit": true,
+      "top_score": 0.03278688524590164,
+      "expected_ids": [
+        "TECH-013",
+        "CV-013"
+      ],
+      "retrieved_ids": [
+        "CV-013",
+        "TECH-013",
+        "TECH-014",
+        "CV-018",
+        "TECH-012"
+      ]
+    },
+    {
+      "case_id": "GOLD-006",
+      "difficulty": "exact",
+      "query": "Angular TypeScript frontend developer",
+      "precision_at_k": 0.3,
+      "recall_at_k": 1.0,
+      "mrr": 1.0,
+      "ndcg_at_k": 1.0,
+      "hit": true,
+      "top_score": 0.03278688524590164,
+      "expected_ids": [
+        "CV-002",
+        "CV-005",
+        "TECH-004"
+      ],
+      "retrieved_ids": [
+        "CV-005",
+        "TECH-004",
+        "CV-002",
+        "TECH-005",
+        "CV-006"
+      ]
+    },
+    {
+      "case_id": "GOLD-007",
+      "difficulty": "paraphrase_semantic",
+      "query": "Développement d'applications mobiles multiplateformes",
+      "precision_at_k": 0.0,
+      "recall_at_k": 0.0,
+      "mrr": 0.0,
+      "ndcg_at_k": 0.0,
+      "hit": false,
+      "top_score": 0.03252247488101534,
+      "expected_ids": [
+        "CV-015",
+        "CV-016",
+        "PROJ-007"
+      ],
+      "retrieved_ids": [
+        "TECH-005",
+        "TECH-020",
+        "TECH-008",
+        "TECH-001",
+        "TECH-003"
+      ]
+    },
+    {
+      "case_id": "GOLD-008",
+      "difficulty": "paraphrase_semantic",
+      "query": "Sécurisation des systèmes d'information et tests d'intrusion",
+      "precision_at_k": 0.14285714285714285,
+      "recall_at_k": 0.3333333333333333,
+      "mrr": 1.0,
+      "ndcg_at_k": 0.46927872602275644,
+      "hit": true,
+      "top_score": 0.03252247488101534,
+      "expected_ids": [
+        "PROJ-010",
+        "CV-020",
+        "CV-021"
+      ],
+      "retrieved_ids": [
+        "CV-021",
+        "TECH-021",
+        "CLIENT-005",
+        "CV-006",
+        "CV-017"
+      ]
+    },
+    {
+      "case_id": "GOLD-009",
+      "difficulty": "paraphrase_semantic",
+      "query": "Mise en place de tableaux de bord analytiques et visualisation de données",
+      "precision_at_k": 0.0,
+      "recall_at_k": 0.0,
+      "mrr": 0.0,
+      "ndcg_at_k": 0.0,
+      "hit": false,
+      "top_score": 0.01639344262295082,
+      "expected_ids": [
+        "CV-019",
+        "PROJ-009",
+        "CV-024"
+      ],
+      "retrieved_ids": [
+        "CLIENT-005",
+        "CLIENT-006",
+        "CLIENT-007",
+        "CLIENT-003"
+      ]
+    },
+    {
+      "case_id": "GOLD-010",
+      "difficulty": "paraphrase_semantic",
+      "query": "Solution de gestion intégrée pour entreprise industrielle",
+      "precision_at_k": 0.0,
+      "recall_at_k": 0.0,
+      "mrr": 0.0,
+      "ndcg_at_k": 0.0,
+      "hit": false,
+      "top_score": 0.01639344262295082,
+      "expected_ids": [
+        "CLIENT-004",
+        "PROJ-004",
+        "CV-007",
+        "CV-008"
+      ],
+      "retrieved_ids": [
+        "CLIENT-006",
+        "CLIENT-007",
+        "CLIENT-003",
+        "CLIENT-005"
+      ]
+    },
+    {
+      "case_id": "GOLD-011",
+      "difficulty": "ambiguous_any_of",
+      "query": "Expérience dans le secteur bancaire et financier",
+      "precision_at_k": 0.0,
+      "recall_at_k": 0.0,
+      "mrr": 0.0,
+      "ndcg_at_k": 0.0,
+      "hit": false,
+      "top_score": 0.03252247488101534,
+      "expected_ids": [
+        "PROJ-007",
+        "PROJ-001",
+        "PROJ-014",
+        "CLIENT-007",
+        "CLIENT-001"
+      ],
+      "retrieved_ids": [
+        "CV-016",
+        "CLIENT-005",
+        "CV-011",
+        "CV-010",
+        "CV-022"
+      ]
+    },
+    {
+      "case_id": "GOLD-012",
+      "difficulty": "ambiguous_any_of",
+      "query": "Portail web avec API REST et base de données",
+      "precision_at_k": 0.4,
+      "recall_at_k": 0.8,
+      "mrr": 1.0,
+      "ndcg_at_k": 0.8687949224876582,
+      "hit": true,
+      "top_score": 0.03278688524590164,
+      "expected_ids": [
+        "PROJ-012",
+        "TECH-012",
+        "PROJ-002",
+        "TECH-020",
+        "PROJ-003"
+      ],
+      "retrieved_ids": [
+        "TECH-020",
+        "PROJ-002",
+        "PROJ-012",
+        "PROJ-003",
+        "TECH-022"
+      ]
+    },
+    {
+      "case_id": "GOLD-013",
+      "difficulty": "no_match_expected",
+      "query": "Blockchain et crypto-monnaie décentralisée",
+      "top_score": 0.01639344262295082,
+      "true_negative": true,
+      "top_result": "CLIENT-005"
+    },
+    {
+      "case_id": "GOLD-014",
+      "difficulty": "exact",
+      "query": "GIS mapping PostGIS spatial analysis",
+      "precision_at_k": 0.3,
+      "recall_at_k": 1.0,
+      "mrr": 1.0,
+      "ndcg_at_k": 1.0,
+      "hit": true,
+      "top_score": 0.03278688524590164,
+      "expected_ids": [
+        "TECH-021",
+        "CV-023",
+        "PROJ-013"
+      ],
+      "retrieved_ids": [
+        "CV-023",
+        "TECH-021",
+        "PROJ-013",
+        "CLIENT-005",
+        "TECH-012"
+      ]
+    },
+    {
+      "case_id": "GOLD-015",
+      "difficulty": "paraphrase_semantic",
+      "query": "Dossier médical électronique et interopérabilité hospitalière",
+      "precision_at_k": 0.0,
+      "recall_at_k": 0.0,
+      "mrr": 0.0,
+      "ndcg_at_k": 0.0,
+      "hit": false,
+      "top_score": 0.01639344262295082,
+      "expected_ids": [
+        "PROJ-006",
+        "CLIENT-006"
+      ],
+      "retrieved_ids": [
+        "CLIENT-005"
+      ]
+    },
+    {
+      "case_id": "GOLD-016",
+      "difficulty": "exact",
+      "query": "Python data engineering Spark ETL pipeline",
+      "precision_at_k": 0.3,
+      "recall_at_k": 1.0,
+      "mrr": 1.0,
+      "ndcg_at_k": 1.0,
+      "hit": true,
+      "top_score": 0.03278688524590164,
+      "expected_ids": [
+        "TECH-006",
+        "PROJ-009",
+        "CV-009"
+      ],
+      "retrieved_ids": [
+        "CV-009",
+        "PROJ-009",
+        "TECH-006",
+        "CV-024",
+        "CV-023"
+      ]
+    },
+    {
+      "case_id": "GOLD-017",
+      "difficulty": "no_match_expected",
+      "query": "Intelligence artificielle générative et modèles de langage LLM",
+      "top_score": 0.03278688524590164,
+      "true_negative": false,
+      "top_result": "TECH-018"
+    },
+    {
+      "case_id": "GOLD-018",
+      "difficulty": "paraphrase_semantic",
+      "query": "Accompagnement au changement et formation des utilisateurs ERP",
+      "precision_at_k": 0.16666666666666666,
+      "recall_at_k": 0.5,
+      "mrr": 0.2,
+      "ndcg_at_k": 0.23719771276929622,
+      "hit": true,
+      "top_score": 0.03252247488101534,
+      "expected_ids": [
+        "CV-018",
+        "PROJ-004"
+      ],
+      "retrieved_ids": [
+        "TECH-007",
+        "CV-008",
+        "CV-007",
+        "CLIENT-004",
+        "PROJ-004"
+      ]
+    },
+    {
+      "case_id": "GOLD-019",
+      "difficulty": "ambiguous_any_of",
+      "query": "Projet e-gouvernement plateforme citoyenne",
+      "precision_at_k": 1.0,
+      "recall_at_k": 0.25,
+      "mrr": 1.0,
+      "ndcg_at_k": 0.3903800499921017,
+      "hit": true,
+      "top_score": 0.01639344262295082,
+      "expected_ids": [
+        "CLIENT-003",
+        "PROJ-006",
+        "CLIENT-006",
+        "PROJ-003"
+      ],
+      "retrieved_ids": [
+        "CLIENT-003"
+      ]
+    }
+  ]
+}

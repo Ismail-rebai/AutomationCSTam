@@ -1,0 +1,78 @@
+version: "3.8"
+
+services:
+  # --- Qdrant Vector Database ---
+  qdrant:
+    image: qdrant/qdrant:v1.9.0
+    ports:
+      - "6333:6333"
+      - "6334:6334"
+    volumes:
+      - qdrant_data:/qdrant/storage
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost:6333/healthz"]
+      interval: 10s
+      timeout: 5s
+      retries: 3
+
+  # --- RAG API Service ---
+  rag-api:
+    build: .
+    ports:
+      - "8001:8001"
+    environment:
+      - EMBEDDING_BACKEND=${EMBEDDING_BACKEND:-tfidf}
+      - QDRANT_URL=http://qdrant:6333
+      - FUSION_METHOD=${FUSION_METHOD:-rrf}
+      - DENSE_WEIGHT=${DENSE_WEIGHT:-0.5}
+      - RRF_K=${RRF_K:-60}
+      - E5_MODEL=${E5_MODEL:-intfloat/multilingual-e5-base}
+      - RERANKER_MODEL=${RERANKER_MODEL:-}
+    depends_on:
+      qdrant:
+        condition: service_healthy
+    command: ["uvicorn", "src.api:app", "--host", "0.0.0.0", "--port", "8001"]
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost:8001/health"]
+      interval: 15s
+      timeout: 5s
+      retries: 3
+    volumes:
+      - ./data:/app/data
+      - ./results:/app/results
+
+  # --- Ingest API Service ---
+  ingest-api:
+    build: .
+    ports:
+      - "8002:8002"
+    environment:
+      - GROQ_API_KEY=${GROQ_API_KEY:-}
+      - GROQ_MODEL=${GROQ_MODEL:-llama-3.1-70b-versatile}
+      - STRUCTURE_ON_INGEST=${STRUCTURE_ON_INGEST:-false}
+      - INGEST_DB_PATH=/app/data/ingest.db
+    command: ["uvicorn", "src.ingest_api:app", "--host", "0.0.0.0", "--port", "8002"]
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost:8002/health"]
+      interval: 15s
+      timeout: 5s
+      retries: 3
+    volumes:
+      - ./data:/app/data
+
+  # --- n8n Workflow Orchestration (optional) ---
+  n8n:
+    image: n8nio/n8n:latest
+    ports:
+      - "5678:5678"
+    environment:
+      - N8N_BASIC_AUTH_ACTIVE=false
+      - WEBHOOK_URL=http://localhost:5678/
+    volumes:
+      - n8n_data:/home/node/.n8n
+    profiles:
+      - full  # Only start with: docker compose --profile full up
+
+volumes:
+  qdrant_data:
+  n8n_data:
