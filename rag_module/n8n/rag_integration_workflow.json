@@ -1,0 +1,193 @@
+{
+  "name": "OliveSoft RAG Integration - Ingest & Match",
+  "nodes": [
+    {
+      "parameters": {},
+      "id": "start-node",
+      "name": "Start",
+      "type": "n8n-nodes-base.start",
+      "typeVersion": 1,
+      "position": [250, 300]
+    },
+    {
+      "parameters": {
+        "url": "={{ $env.SIMULATED_FEED_URL || 'http://localhost:8002/tenders' }}",
+        "options": {},
+        "description": "PLACEHOLDER: Replace with your actual tender feed source URL or use the SimulatedFeedSource endpoint"
+      },
+      "id": "fetch-tenders",
+      "name": "Fetch Tender Feed",
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4,
+      "position": [450, 300],
+      "notes": "Replace URL with your tender source. DO NOT use appeloffres.net/.com."
+    },
+    {
+      "parameters": {
+        "conditions": {
+          "boolean": [
+            {
+              "value1": "={{ $json.llm_classified }}",
+              "value2": true
+            }
+          ]
+        }
+      },
+      "id": "relevance-filter",
+      "name": "Relevance Filter (If Classified)",
+      "type": "n8n-nodes-base.if",
+      "typeVersion": 1,
+      "position": [650, 300]
+    },
+    {
+      "parameters": {
+        "url": "={{ $env.INGEST_API_URL || 'http://localhost:8002' }}/tenders/ingest",
+        "method": "POST",
+        "body": {
+          "items": ["={{ [$json] }}"]
+        },
+        "options": {
+          "timeout": 30000
+        },
+        "sendBody": true,
+        "bodyContentType": "json"
+      },
+      "id": "ingest-tender",
+      "name": "POST /tenders/ingest",
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4,
+      "position": [850, 200],
+      "notes": "Sends the classified tender to the RAG ingest API. Deduplication is handled server-side."
+    },
+    {
+      "parameters": {
+        "url": "={{ $env.INGEST_API_URL || 'http://localhost:8002' }}/tenders/structure",
+        "method": "POST",
+        "body": {
+          "tender_id": "={{ $json.results[0].tender_id }}",
+          "force": false
+        },
+        "options": {
+          "timeout": 60000
+        },
+        "sendBody": true,
+        "bodyContentType": "json"
+      },
+      "id": "structure-tender",
+      "name": "POST /tenders/structure",
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4,
+      "position": [1050, 200],
+      "notes": "Structures the tender via LLM (Groq). Falls back to deterministic structuring if no API key."
+    },
+    {
+      "parameters": {
+        "url": "={{ $env.RAG_API_URL || 'http://localhost:8001' }}/match-tender",
+        "method": "POST",
+        "body": {
+          "tender_id": "={{ $json.structured_data.tender_id }}",
+          "title": "={{ $json.structured_data.title }}",
+          "requirements": "={{ $json.structured_data.requirements }}",
+          "top_k": 5
+        },
+        "options": {
+          "timeout": 30000
+        },
+        "sendBody": true,
+        "bodyContentType": "json"
+      },
+      "id": "match-tender",
+      "name": "POST /match-tender",
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4,
+      "position": [1250, 200],
+      "notes": "Matches structured tender requirements against OliveSoft KB. Returns coverage matrix, fit score, and staffing suggestions."
+    },
+    {
+      "parameters": {
+        "conditions": {
+          "boolean": [
+            {
+              "value1": "={{ $json.no_match }}",
+              "value2": false
+            }
+          ]
+        }
+      },
+      "id": "has-match",
+      "name": "Has Match?",
+      "type": "n8n-nodes-base.if",
+      "typeVersion": 1,
+      "position": [1450, 200]
+    },
+    {
+      "parameters": {},
+      "id": "proceed-to-research",
+      "name": "→ Prospect Research Agent",
+      "type": "n8n-nodes-base.noOp",
+      "typeVersion": 1,
+      "position": [1650, 100],
+      "notes": "Connect this to the prospect research agent workflow (teammate's node)"
+    },
+    {
+      "parameters": {},
+      "id": "skip-no-match",
+      "name": "Skip (No Match)",
+      "type": "n8n-nodes-base.noOp",
+      "typeVersion": 1,
+      "position": [1650, 300],
+      "notes": "Tender has no matching expertise in KB. Log and skip."
+    },
+    {
+      "parameters": {},
+      "id": "skip-irrelevant",
+      "name": "Skip (Not Relevant)",
+      "type": "n8n-nodes-base.noOp",
+      "typeVersion": 1,
+      "position": [850, 400],
+      "notes": "Tender was not classified as relevant by LLM classifier."
+    }
+  ],
+  "connections": {
+    "Start": {
+      "main": [
+        [{"node": "Fetch Tender Feed", "type": "main", "index": 0}]
+      ]
+    },
+    "Fetch Tender Feed": {
+      "main": [
+        [{"node": "Relevance Filter (If Classified)", "type": "main", "index": 0}]
+      ]
+    },
+    "Relevance Filter (If Classified)": {
+      "main": [
+        [{"node": "POST /tenders/ingest", "type": "main", "index": 0}],
+        [{"node": "Skip (Not Relevant)", "type": "main", "index": 0}]
+      ]
+    },
+    "POST /tenders/ingest": {
+      "main": [
+        [{"node": "POST /tenders/structure", "type": "main", "index": 0}]
+      ]
+    },
+    "POST /tenders/structure": {
+      "main": [
+        [{"node": "POST /match-tender", "type": "main", "index": 0}]
+      ]
+    },
+    "POST /match-tender": {
+      "main": [
+        [{"node": "Has Match?", "type": "main", "index": 0}]
+      ]
+    },
+    "Has Match?": {
+      "main": [
+        [{"node": "→ Prospect Research Agent", "type": "main", "index": 0}],
+        [{"node": "Skip (No Match)", "type": "main", "index": 0}]
+      ]
+    }
+  },
+  "settings": {
+    "executionOrder": "v1"
+  }
+}

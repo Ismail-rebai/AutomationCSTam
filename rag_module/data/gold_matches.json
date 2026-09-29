@@ -1,0 +1,154 @@
+[
+  {
+    "case_id": "GOLD-001",
+    "difficulty": "exact",
+    "query": "Développement Java Spring Boot pour système bancaire",
+    "expected_asset_ids": ["CV-001", "CV-003", "PROJ-001"],
+    "expected_types": ["cv", "past_project"],
+    "explanation": "Direct keyword match: Java, Spring Boot, banking system"
+  },
+  {
+    "case_id": "GOLD-002",
+    "difficulty": "exact",
+    "query": "Consultant SAP FI/CO avec certification",
+    "expected_asset_ids": ["CV-007", "CV-008", "PROJ-004"],
+    "expected_types": ["cv", "past_project"],
+    "explanation": "Direct match: SAP FI/CO consultant with certification"
+  },
+  {
+    "case_id": "GOLD-003",
+    "difficulty": "exact",
+    "query": "Développeur Salesforce Apex Lightning",
+    "expected_asset_ids": ["CV-017", "PROJ-008"],
+    "expected_types": ["cv", "past_project"],
+    "explanation": "Direct match: Salesforce Apex Lightning developer"
+  },
+  {
+    "case_id": "GOLD-004",
+    "difficulty": "exact",
+    "query": "Docker Kubernetes CI/CD pipeline",
+    "expected_asset_ids": ["CV-014", "PROJ-011", "TECH-010", "TECH-011"],
+    "expected_types": ["cv", "past_project", "tech_stack"],
+    "explanation": "Direct match: DevOps toolchain keywords"
+  },
+  {
+    "case_id": "GOLD-005",
+    "difficulty": "exact",
+    "query": "Oracle database administration performance tuning",
+    "expected_asset_ids": ["CV-013", "TECH-013"],
+    "expected_types": ["cv", "tech_stack"],
+    "explanation": "Direct match: Oracle DBA with tuning expertise"
+  },
+  {
+    "case_id": "GOLD-006",
+    "difficulty": "exact",
+    "query": "Angular TypeScript frontend developer",
+    "expected_asset_ids": ["CV-002", "CV-005", "TECH-004"],
+    "expected_types": ["cv", "tech_stack"],
+    "explanation": "Direct match: Angular TypeScript frontend skills"
+  },
+  {
+    "case_id": "GOLD-007",
+    "difficulty": "paraphrase_semantic",
+    "query": "Développement d'applications mobiles multiplateformes",
+    "expected_asset_ids": ["CV-015", "CV-016", "PROJ-007"],
+    "expected_types": ["cv", "past_project"],
+    "explanation": "French query 'cross-platform mobile applications' should match Flutter/React Native CVs"
+  },
+  {
+    "case_id": "GOLD-008",
+    "difficulty": "paraphrase_semantic",
+    "query": "Sécurisation des systèmes d'information et tests d'intrusion",
+    "expected_asset_ids": ["CV-020", "CV-021", "PROJ-010"],
+    "expected_types": ["cv", "past_project"],
+    "explanation": "French query 'IT security and penetration testing' should match cybersecurity CVs"
+  },
+  {
+    "case_id": "GOLD-009",
+    "difficulty": "paraphrase_semantic",
+    "query": "Mise en place de tableaux de bord analytiques et visualisation de données",
+    "expected_asset_ids": ["CV-019", "CV-024", "PROJ-009"],
+    "expected_types": ["cv", "past_project"],
+    "explanation": "French query 'analytical dashboards and data visualization' should match data analyst CVs"
+  },
+  {
+    "case_id": "GOLD-010",
+    "difficulty": "paraphrase_semantic",
+    "query": "Solution de gestion intégrée pour entreprise industrielle",
+    "expected_asset_ids": ["CV-007", "CV-008", "PROJ-004", "CLIENT-004"],
+    "expected_types": ["cv", "past_project", "client"],
+    "explanation": "French query 'integrated management solution for industrial company' should match SAP/ERP"
+  },
+  {
+    "case_id": "GOLD-011",
+    "difficulty": "ambiguous_any_of",
+    "query": "Expérience dans le secteur bancaire et financier",
+    "expected_asset_ids": ["CLIENT-001", "CLIENT-007", "PROJ-001", "PROJ-007", "PROJ-014"],
+    "expected_types": ["client", "past_project"],
+    "explanation": "Multiple banking/finance assets should match; any subset is acceptable"
+  },
+  {
+    "case_id": "GOLD-012",
+    "difficulty": "ambiguous_any_of",
+    "query": "Portail web avec API REST et base de données",
+    "expected_asset_ids": ["PROJ-002", "PROJ-003", "PROJ-012", "TECH-012", "TECH-020"],
+    "expected_types": ["past_project", "tech_stack"],
+    "explanation": "Broad web portal query; multiple web projects and techs should match"
+  },
+  {
+    "case_id": "GOLD-013",
+    "difficulty": "no_match_expected",
+    "query": "Blockchain et crypto-monnaie décentralisée",
+    "expected_asset_ids": [],
+    "expected_types": [],
+    "explanation": "No blockchain/cryptocurrency expertise in KB; should return no relevant matches"
+  },
+  {
+    "case_id": "GOLD-014",
+    "difficulty": "exact",
+    "query": "GIS mapping PostGIS spatial analysis",
+    "expected_asset_ids": ["CV-023", "PROJ-013", "TECH-021"],
+    "expected_types": ["cv", "past_project", "tech_stack"],
+    "explanation": "Direct match: GIS, PostGIS, spatial analysis keywords"
+  },
+  {
+    "case_id": "GOLD-015",
+    "difficulty": "paraphrase_semantic",
+    "query": "Dossier médical électronique et interopérabilité hospitalière",
+    "expected_asset_ids": ["PROJ-006", "CLIENT-006"],
+    "expected_types": ["past_project", "client"],
+    "explanation": "French 'electronic medical record and hospital interoperability' should match health records project"
+  },
+  {
+    "case_id": "GOLD-016",
+    "difficulty": "exact",
+    "query": "Python data engineering Spark ETL pipeline",
+    "expected_asset_ids": ["CV-009", "PROJ-009", "TECH-006"],
+    "expected_types": ["cv", "past_project", "tech_stack"],
+    "explanation": "Direct match: Python, Spark, ETL pipeline keywords"
+  },
+  {
+    "case_id": "GOLD-017",
+    "difficulty": "no_match_expected",
+    "query": "Intelligence artificielle générative et modèles de langage LLM",
+    "expected_asset_ids": [],
+    "expected_types": [],
+    "explanation": "No generative AI / LLM expertise in KB; should return no relevant matches"
+  },
+  {
+    "case_id": "GOLD-018",
+    "difficulty": "paraphrase_semantic",
+    "query": "Accompagnement au changement et formation des utilisateurs ERP",
+    "expected_asset_ids": ["CV-018", "PROJ-004"],
+    "expected_types": ["cv", "past_project"],
+    "explanation": "French 'change management and ERP user training' should match SAP consultant and ERP project"
+  },
+  {
+    "case_id": "GOLD-019",
+    "difficulty": "ambiguous_any_of",
+    "query": "Projet e-gouvernement plateforme citoyenne",
+    "expected_asset_ids": ["PROJ-003", "PROJ-006", "CLIENT-003", "CLIENT-006"],
+    "expected_types": ["past_project", "client"],
+    "explanation": "E-government citizen platform; should match CNSS and Ministry of Health projects"
+  }
+]
