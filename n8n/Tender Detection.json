@@ -1,0 +1,295 @@
+{
+  "name": "Tender Detection",
+  "nodes": [
+    {
+      "parameters": {
+        "rule": {
+          "interval": [
+            {
+              "field": "hours",
+              "hoursInterval": 6
+            }
+          ]
+        }
+      },
+      "type": "n8n-nodes-base.scheduleTrigger",
+      "typeVersion": 1.4,
+      "position": [
+        -1008,
+        272
+      ],
+      "id": "7278bf2c-a82b-4374-ab4d-7dd8d0fee1f4",
+      "name": "Schedule Trigger"
+    },
+    {
+      "parameters": {
+        "url": "https://www.appeloffres.com/appels-offres/informatique-materiels-et-logiciels",
+        "options": {
+          "response": {
+            "response": {
+              "responseFormat": "text"
+            }
+          }
+        }
+      },
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.5,
+      "position": [
+        -784,
+        272
+      ],
+      "id": "e9793703-a659-4a32-8396-c1ad089f9769",
+      "name": "HTTP Request"
+    },
+    {
+      "parameters": {
+        "jsCode": "const html = $input.first()?.json?.data || '';\nconst now = new Date();\nconst tenders = [];\n\n// Extract each card\nconst cards = html.match(/<div class=\"ao-card\"[\\s\\S]*?(?=<div class=\"ao-card\"|<div class=\"ao-pagination mt-3\">)/g) || [];\n\nfor (const card of cards) {\n  // URL and ID\n  const urlMatch = card.match(/href=\"(https:\\/\\/www\\.appeloffres\\.com\\/appels-offres\\/informatique-materiels-et-logiciels\\/([^\"]+))\"\\s*class=\"btn-detail\"/);\n  if (!urlMatch) continue;\n\n  const url = urlMatch[1];\n  const slug = urlMatch[2];\n  const id = slug.split('-')[0];\n\n  // Description\n  const descMatch = card.match(/<div class=\"ao-desc\">([\\s\\S]*?)<\\/div>/);\n  const description = descMatch ? descMatch[1].trim() : '';\n\n  // Publication date\n  const dateMatch = card.match(/bi-calendar3\"><\\/i>\\s*([^<]+)/);\n  const rawDate = dateMatch ? dateMatch[1].trim() : '';\n\n  // Deadline\n  const deadlineMatch = card.match(/bi-alarm\"><\\/i>\\s*([^<]+)/);\n  const deadline = deadlineMatch ? deadlineMatch[1].trim() : '';\n\n  // Country\n  const countryMatch = card.match(/flag_(\\w+)\\.png.*?title=\"([^\"]+)\"/);\n  const country = countryMatch ? countryMatch[2] : 'Unknown';\n\n  // Reference number\n  const refMatch = card.match(/bi-hash\"><\\/i>\\s*([^<]+)/);\n  const reference = refMatch ? refMatch[1].trim() : '';\n\n  // Skip reported/postponed tenders\n  if (description.toLowerCase().includes('report')) continue;\n\n  // Convert DD/MM/YYYY to ISO YYYY-MM-DD\n  let isoPublishedDate = '';\n  if (rawDate) {\n    const p = rawDate.split('/');\n    if (p.length === 3) isoPublishedDate = `${p[2]}-${p[1]}-${p[0]}`;\n  }\n\n  // Exclude tenders whose deadline has already passed\n  if (deadline) {\n    const p = deadline.split(' ')[0].split('/');\n    if (p.length === 3) {\n      const deadlineDate = new Date(`${p[2]}-${p[1]}-${p[0]}`);\n      if (deadlineDate < now) continue; // Expired\n    }\n  }\n\n  tenders.push({\n    json: {\n      id: `APPELOFFRES-${id}`,\n      source: 'appeloffres.com',\n      domain: 'Informatique / Logiciels',\n      description: description,\n      reference: reference,\n      country: country,\n      published_date: isoPublishedDate || rawDate,\n      deadline: deadline,\n      url: url,\n      detected_at: now.toISOString(),\n      status: 'active'\n    }\n  });\n}\n\nreturn tenders;"
+      },
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        -560,
+        272
+      ],
+      "id": "a162659f-8566-4e22-93a0-cc4c05721e8a",
+      "name": "Code in JavaScript"
+    },
+    {
+      "parameters": {
+        "method": "POST",
+        "url": "https://api.groq.com/openai/v1/chat/completions",
+        "sendHeaders": true,
+        "headerParameters": {
+          "parameters": [
+            {
+              "name": "Authorization",
+              "value": "Bearer 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"
+            }
+          ]
+        },
+        "sendBody": true,
+        "specifyBody": "json",
+        "jsonBody": "={\n  \"model\": \"qwen/qwen3.8-27b\",\n  \"max_tokens\": 2000,\n  \"response_format\": {\n    \"type\": \"json_object\"\n  },\n  \"messages\": [\n    {\n      \"role\": \"system\",\n      \"content\": \"You are a classifier for a software company with three expertise areas: 1) Custom software development (web, mobile, enterprise applications), 2) Data engineering and pipelines (ETL, BI, analytics, ERP, databases, data platforms), 3) GenAI and LLM integration (AI systems, chatbots, intelligent platforms, machine learning). Given numbered tender descriptions (in French, English, and other languages), return ONLY a JSON object with key 'relevant' containing an array of numbers whose tenders require one of these three capabilities. Exclude pure hardware, cameras, cables, printers, office supplies, physical security. Example: {\\\"relevant\\\": [2,4,9]}\"\n    },\n    {\n      \"role\": \"user\",\n      \"content\": \"{{ $json.data.map((item, i) => (i+1) + '. ' + (item.description || '').replaceAll(String.fromCharCode(92), ' ').replaceAll(String.fromCharCode(34), ' ').replaceAll(String.fromCharCode(10), ' ').replaceAll(String.fromCharCode(13), ' ')).join(' | ') }}\"\n    }\n  ]\n}",
+        "options": {}
+      },
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.5,
+      "position": [
+        512,
+        0
+      ],
+      "id": "60b9142e-b7d7-43d1-b6e5-5dc232a64cd3",
+      "name": "HTTP Request1"
+    },
+    {
+      "parameters": {
+        "jsCode": "const items = $input.all();\n\nconst relevant = [\n  'logiciel', 'développement', 'plateforme', 'données',\n  'système', 'erp', 'business intelligence', 'cloud',\n  'intelligence artificielle', 'application', 'web',\n  'digital', 'refonte', 'solution logicielle', 'data',\n  'sécurité informatique', 'réseau informatique', 'base de données',\n  'datacenter', 'data center', 'microsoft', 'serveur'\n];\n\nconst hardware = [\n  'caméra', 'surveillance', 'tablette', 'imprimante',\n  'câble', 'consommable', 'onduleur', 'climatiseur',\n  'scanner', 'cartouche', 'graveur', 'photocopieur',\n  'véhicule', 'mobilier', 'chaise', 'armoire'\n];\n\nconst filtered = items.filter(item => {\n  const desc = (item.json.description || '').toLowerCase();\n  const isRelevant = relevant.some(k => desc.includes(k));\n  const isHardware = hardware.some(k => desc.includes(k));\n  return isRelevant && !isHardware;\n});\n\nreturn filtered.map((item, index) => ({\n  json: {\n    ...item.json,\n    filter_index: index + 1\n  }\n}));"
+      },
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        -336,
+        272
+      ],
+      "id": "680ad0a1-b563-4358-af9d-abdb173d3a9d",
+      "name": "Code in JavaScript1"
+    },
+    {
+      "parameters": {
+        "aggregate": "aggregateAllItemData",
+        "options": {}
+      },
+      "type": "n8n-nodes-base.aggregate",
+      "typeVersion": 1,
+      "position": [
+        240,
+        0
+      ],
+      "id": "c75a7be2-e8cc-47ca-8a9c-a6349350ee15",
+      "name": "Aggregate"
+    },
+    {
+      "parameters": {
+        "jsCode": "// 1. Extract Groq response\nconst groqContent = $input.first()?.json?.choices?.[0]?.message?.content || '{}';\n\n// 2. Parse returned relevant indices\nlet indices = [];\ntry {\n  const parsed = JSON.parse(groqContent);\n  indices = Array.isArray(parsed.relevant) ? parsed.relevant : [];\n} catch(e) {\n  const matches = groqContent.match(/\\d+/g) || [];\n  indices = matches.map(Number);\n}\n\n// 3. Directly retrieve the full merged list of tenders from the Aggregate node\nconst tenders = $('Aggregate').first()?.json?.data || [];\n\n// 4. Retrieve static cache for new tender tracking (safe for test & production)\nconst staticData = (typeof $getWorkflowStaticData === 'function') ? $getWorkflowStaticData('global') : {};\nstaticData.seenIds = staticData.seenIds || [];\nconst seenSet = new Set(staticData.seenIds);\n\n// 5. Map matching indices to full tender objects and tag new ones\nconst relevantTenders = indices\n  .filter(i => Number.isInteger(i) && i >= 1 && i <= tenders.length)\n  .map(i => {\n    const tender = tenders[i - 1];\n    const isNew = !seenSet.has(tender.id);\n    if (isNew) seenSet.add(tender.id);\n    return {\n      json: {\n        ...tender,\n        is_new: isNew,\n        llm_classified: true,\n        relevance_source: 'groq'\n      }\n    };\n  });\n\n// Maintain cache size to prevent memory growth (keep last 3000 IDs)\nstaticData.seenIds = Array.from(seenSet).slice(-3000);\n\n// 6. Sort all results by publication date descending (latest tenders ALWAYS first)\nrelevantTenders.sort((a, b) => {\n  const dateA = a.json.published_date || '';\n  const dateB = b.json.published_date || '';\n  return dateB.localeCompare(dateA);\n});\n\nconsole.log(`Successfully classified ${relevantTenders.length} relevant tenders out of ${tenders.length} total.`);\n\nreturn relevantTenders;"
+      },
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        800,
+        0
+      ],
+      "id": "97dc8977-cad2-48e1-b288-b9799d41d05d",
+      "name": "Code in JavaScript2"
+    },
+    {
+      "parameters": {
+        "method": "POST",
+        "url": "https://api.ted.europa.eu/v3/notices/search",
+        "sendHeaders": true,
+        "headerParameters": {
+          "parameters": [
+            {
+              "name": "Content-Type",
+              "value": "application/json"
+            }
+          ]
+        },
+        "sendBody": true,
+        "specifyBody": "json",
+        "jsonBody": "={\n  \"query\": \"classification-cpv IN (72000000, 72200000, 72300000, 72400000, 72500000, 72600000) AND publication-date >= {{ $today.minus({ days: 14 }).toFormat('yyyyMMdd') }} SORT BY publication-date DESC\",\n  \"limit\": 50,\n  \"page\": 1,\n  \"scope\": \"ACTIVE\",\n  \"fields\": [\n    \"publication-date\",\n    \"notice-title\",\n    \"buyer-name\",\n    \"buyer-country\",\n    \"classification-cpv\",\n    \"publication-number\"\n  ]\n}\n",
+        "options": {}
+      },
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.5,
+      "position": [
+        -800,
+        16
+      ],
+      "id": "e4a985a1-5382-4592-997f-5dac09724d21",
+      "name": "HTTP Request2"
+    },
+    {
+      "parameters": {
+        "jsCode": "const notices = $input.first()?.json?.notices || [];\n\nreturn notices.map(notice => {\n  const title = notice['notice-title']?.eng \n    || Object.values(notice['notice-title'] || {})[0] \n    || 'No title';\n  \n  const buyerName = notice['buyer-name']\n    ? Object.values(notice['buyer-name'])[0]?.[0] || 'Unknown'\n    : 'Unknown';\n\n  const country = notice['buyer-country']?.[0] || 'Unknown';\n  const pubNumber = notice['publication-number'] || '';\n  const pubDate = notice['publication-date']?.split('+')[0] || '';\n  const cpvCodes = (notice['classification-cpv'] || []).join(', ');\n  const url = `https://ted.europa.eu/en/notice/-/detail/${pubNumber}`;\n\n  return {\n    json: {\n      id: `TED-${pubNumber}`,\n      source: 'ted.europa.eu',\n      domain: 'IT / Software Services',\n      description: title,\n      reference: pubNumber,\n      country: country,\n      published_date: pubDate,\n      deadline: '',\n      url: url,\n      detected_at: new Date().toISOString(),\n      status: 'active',\n      cpv_codes: cpvCodes,\n      buyer: buyerName\n    }\n  };\n});"
+      },
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        -576,
+        16
+      ],
+      "id": "ca238535-b2b8-4b25-9c9a-35c3ae0c2757",
+      "name": "Code in JavaScript3"
+    },
+    {
+      "parameters": {},
+      "type": "n8n-nodes-base.merge",
+      "typeVersion": 3.2,
+      "position": [
+        0,
+        0
+      ],
+      "id": "11909aa2-6bf4-4119-9102-0de1aa2db256",
+      "name": "Merge"
+    }
+  ],
+  "pinData": {},
+  "connections": {
+    "Schedule Trigger": {
+      "main": [
+        [
+          {
+            "node": "HTTP Request",
+            "type": "main",
+            "index": 0
+          },
+          {
+            "node": "HTTP Request2",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "HTTP Request": {
+      "main": [
+        [
+          {
+            "node": "Code in JavaScript",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Code in JavaScript": {
+      "main": [
+        [
+          {
+            "node": "Code in JavaScript1",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "HTTP Request1": {
+      "main": [
+        [
+          {
+            "node": "Code in JavaScript2",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Code in JavaScript1": {
+      "main": [
+        [
+          {
+            "node": "Merge",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Aggregate": {
+      "main": [
+        [
+          {
+            "node": "HTTP Request1",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "HTTP Request2": {
+      "main": [
+        [
+          {
+            "node": "Code in JavaScript3",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Code in JavaScript3": {
+      "main": [
+        [
+          {
+            "node": "Merge",
+            "type": "main",
+            "index": 1
+          }
+        ]
+      ]
+    },
+    "Merge": {
+      "main": [
+        [
+          {
+            "node": "Aggregate",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    }
+  },
+  "active": false,
+  "settings": {
+    "executionOrder": "v1",
+    "binaryMode": "separate"
+  },
+  "versionId": "621e34e8-2f27-4ea8-aa67-6a3a58545fc3",
+  "meta": {
+    "instanceId": "e2f13a72ff4b80809628fabe7227c2e015c17987f1c3125d7578d89393523531"
+  },
+  "nodeGroups": [],
+  "id": "Y2l8B2WwcxUjTRis",
+  "tags": []
+}
