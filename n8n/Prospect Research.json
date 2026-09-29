@@ -1,0 +1,235 @@
+{
+  "name": "Prospect Research",
+  "nodes": [
+    {
+      "parameters": {
+        "httpMethod": "POST",
+        "path": "prospect-research",
+        "responseMode": "lastNode",
+        "options": {}
+      },
+      "type": "n8n-nodes-base.webhook",
+      "typeVersion": 2.1,
+      "position": [
+        0,
+        0
+      ],
+      "id": "1d6cee1c-3324-4d91-936b-04eb7bda1003",
+      "name": "Webhook",
+      "webhookId": "32e8de73-7534-4d6e-b080-9816ccbca614"
+    },
+    {
+      "parameters": {
+        "jsCode": "const raw = $input.first()?.json || {};\n// Handle both webhook POST payload (raw.body) and direct item payload (raw)\nconst tender = (raw.body && typeof raw.body === 'object' && Object.keys(raw.body).length > 0) ? raw.body : raw;\n\n// Build targeted search queries\nconst buyer = tender.buyer || tender.buyer_name || 'Ministère de la Santé';\nconst buyerQuery = `\"${buyer}\" Tunisia IT projects technology budget`;\nconst sectorQuery = `\"${buyer}\" digital transformation software`;\n\nreturn [{\n  json: {\n    tender_id: tender.id || tender.tender_id || '',\n    buyer: buyer,\n    country: tender.country || 'Tunisia',\n    description: tender.description || '',\n    source: tender.source || '',\n    url: tender.url || '',\n    published_date: tender.published_date || '',\n    deadline: tender.deadline || '',\n    search_query_1: buyerQuery,\n    search_query_2: sectorQuery\n  }\n}];"
+      },
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        224,
+        0
+      ],
+      "id": "0dac9eeb-3611-420f-8cae-a8bf4ce79205",
+      "name": "Code in JavaScript"
+    },
+    {
+      "parameters": {
+        "method": "POST",
+        "url": "https://google.serper.dev/search",
+        "sendHeaders": true,
+        "headerParameters": {
+          "parameters": [
+            {
+              "name": "X-API-KEY",
+              "value": "<serper_key>"
+            },
+            {
+              "name": "Content-Type",
+              "value": "application/json"
+            }
+          ]
+        },
+        "sendBody": true,
+        "specifyBody": "json",
+        "jsonBody": "={\n  \"q\": {{ JSON.stringify($json.search_query_1) }},\n  \"num\": 5\n}",
+        "options": {}
+      },
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.5,
+      "position": [
+        448,
+        0
+      ],
+      "id": "b3e7a1f2-5c89-4a92-91e8-78c23f109a12",
+      "name": "HTTP Request - Serper 1"
+    },
+    {
+      "parameters": {
+        "method": "POST",
+        "url": "https://google.serper.dev/search",
+        "sendHeaders": true,
+        "headerParameters": {
+          "parameters": [
+            {
+              "name": "X-API-KEY",
+              "value": "<serper_key>"
+            },
+            {
+              "name": "Content-Type",
+              "value": "application/json"
+            }
+          ]
+        },
+        "sendBody": true,
+        "specifyBody": "json",
+        "jsonBody": "={\n  \"q\": {{ JSON.stringify($('Code in JavaScript').first().json.search_query_2 || $json.search_query_2) }},\n  \"num\": 5\n}",
+        "options": {}
+      },
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.5,
+      "position": [
+        672,
+        0
+      ],
+      "id": "c8f1b2d4-3e9a-4127-b508-41d3e8790b23",
+      "name": "HTTP Request - Serper 2"
+    },
+    {
+      "parameters": {
+        "jsCode": "// 1. Retrieve original tender data from Node 2\nconst tender = $('Code in JavaScript').first()?.json || {};\n\n// 2. Retrieve Serper Query 1 results (from Node 3)\nconst serper1 = $('HTTP Request - Serper 1').first()?.json || {};\nconst organic1 = serper1.organic || [];\n\n// 3. Retrieve Serper Query 2 results (from Node 4 / current input)\nconst serper2 = $input.first()?.json || $('HTTP Request - Serper 2').first()?.json || {};\nconst organic2 = serper2.organic || [];\n\n// 4. Helper to format search results\nconst formatResults = (items, label) => {\n  if (!Array.isArray(items) || items.length === 0) {\n    return `[No organic search results found for: ${label}]`;\n  }\n  return items.slice(0, 5).map((item, idx) => {\n    const title = item.title || 'Untitled';\n    const snippet = item.snippet || 'No snippet available';\n    const link = item.link || '';\n    return `${idx + 1}. ${title}\\nSnippet: ${snippet}\\nSource: ${link}`;\n  }).join('\\n\\n');\n};\n\nconst text1 = formatResults(organic1, tender.search_query_1 || 'Buyer query');\nconst text2 = formatResults(organic2, tender.search_query_2 || 'Sector query');\n\nconst combinedText = `=== SEARCH RESULTS: BUYER IT PROJECTS & BUDGET ===\\n${text1}\\n\\n=== SEARCH RESULTS: DIGITAL TRANSFORMATION & SOFTWARE ===\\n${text2}`;\n\nreturn [{\n  json: {\n    tender_id: tender.tender_id || '',\n    buyer: tender.buyer || 'Unknown',\n    country: tender.country || '',\n    description: tender.description || '',\n    source: tender.source || '',\n    url: tender.url || '',\n    published_date: tender.published_date || '',\n    deadline: tender.deadline || '',\n    search_results_text: combinedText\n  }\n}];"
+      },
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        896,
+        0
+      ],
+      "id": "e1a924b8-d213-4c90-87ef-32b0f4510c45",
+      "name": "Code in JavaScript1"
+    },
+    {
+      "parameters": {
+        "method": "POST",
+        "url": "https://api.groq.com/openai/v1/chat/completions",
+        "sendHeaders": true,
+        "headerParameters": {
+          "parameters": [
+            {
+              "name": "Authorization",
+              "value": "Bearer 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"
+            },
+            {
+              "name": "Content-Type",
+              "value": "application/json"
+            }
+          ]
+        },
+        "sendBody": true,
+        "specifyBody": "json",
+        "jsonBody": "={\n  \"model\": \"qwen/qwen3.8-27b\",\n  \"max_tokens\": 1000,\n  \"response_format\": {\n    \"type\": \"json_object\"\n  },\n  \"messages\": [\n    {\n      \"role\": \"system\",\n      \"content\": \"You are a prospect research analyst for an IT services company. Given a tender description and web search results about the buyer organization, extract and structure a prospect profile. Return ONLY a JSON object with these fields: sector, estimated_budget, org_size, past_it_projects (array), key_contacts, competitors_likely (array), opportunity_score (1-10), research_summary.\"\n    },\n    {\n      \"role\": \"user\",\n      \"content\": {{ JSON.stringify('Tender: ' + ($json.description || '') + '\\n\\nBuyer: ' + ($json.buyer || '') + '\\n\\nSearch Results:\\n' + ($json.search_results_text || '')) }}\n    }\n  ]\n}",
+        "options": {}
+      },
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.5,
+      "position": [
+        1120,
+        0
+      ],
+      "id": "76d54e12-4019-482a-9cb0-394ef321d567",
+      "name": "HTTP Request - Groq"
+    },
+    {
+      "parameters": {
+        "jsCode": "// 1. Extract raw Groq response\nconst rawContent = $input.first()?.json?.choices?.[0]?.message?.content || '{}';\n\n// 2. Parse structured profile JSON\nlet profile = {};\ntry {\n  profile = JSON.parse(rawContent);\n} catch (e) {\n  const jsonMatch = rawContent.match(/\\{[\\s\\S]*\\}/);\n  if (jsonMatch) {\n    try {\n      profile = JSON.parse(jsonMatch[0]);\n    } catch (e2) {\n      profile = { error: 'Failed to parse JSON', raw: rawContent };\n    }\n  } else {\n    profile = { error: 'No JSON object found', raw: rawContent };\n  }\n}\n\n// 3. Retrieve original tender info from Node 5\nconst tender = $('Code in JavaScript1').first()?.json || $('Code in JavaScript').first()?.json || {};\n\n// 4. Return complete enriched package ready for RAG & Proposal generation\nreturn [{\n  json: {\n    tender_id: tender.tender_id || '',\n    buyer: tender.buyer || '',\n    country: tender.country || '',\n    description: tender.description || '',\n    source: tender.source || '',\n    url: tender.url || '',\n    published_date: tender.published_date || '',\n    deadline: tender.deadline || '',\n    prospect_profile: {\n      sector: profile.sector || 'Unknown',\n      estimated_budget: profile.estimated_budget || 'Unknown',\n      org_size: profile.org_size || 'Unknown',\n      past_it_projects: Array.isArray(profile.past_it_projects) ? profile.past_it_projects : [],\n      key_contacts: profile.key_contacts || 'Unknown',\n      competitors_likely: Array.isArray(profile.competitors_likely) ? profile.competitors_likely : [],\n      opportunity_score: profile.opportunity_score || 0,\n      research_summary: profile.research_summary || ''\n    },\n    researched_at: new Date().toISOString()\n  }\n}];"
+      },
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        1344,
+        0
+      ],
+      "id": "89b7e314-5231-4198-8ad4-124b893cf678",
+      "name": "Code in JavaScript2"
+    }
+  ],
+  "pinData": {},
+  "connections": {
+    "Webhook": {
+      "main": [
+        [
+          {
+            "node": "Code in JavaScript",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Code in JavaScript": {
+      "main": [
+        [
+          {
+            "node": "HTTP Request - Serper 1",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "HTTP Request - Serper 1": {
+      "main": [
+        [
+          {
+            "node": "HTTP Request - Serper 2",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "HTTP Request - Serper 2": {
+      "main": [
+        [
+          {
+            "node": "Code in JavaScript1",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Code in JavaScript1": {
+      "main": [
+        [
+          {
+            "node": "HTTP Request - Groq",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "HTTP Request - Groq": {
+      "main": [
+        [
+          {
+            "node": "Code in JavaScript2",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    }
+  },
+  "active": true,
+  "settings": {
+    "executionOrder": "v1",
+    "binaryMode": "separate"
+  },
+  "versionId": "438803c0-6988-4a2c-8670-7720f22b27c4",
+  "meta": {
+    "instanceId": "e2f13a72ff4b80809628fabe7227c2e015c17987f1c3125d7578d89393523531"
+  },
+  "nodeGroups": [],
+  "id": "sRxIznhkiuKjIF6H",
+  "tags": []
+}
