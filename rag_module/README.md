@@ -28,46 +28,46 @@ This module delivers the core intelligence engine:
 
 ```mermaid
 flowchart TD
-    subgraph Tender Sources
-        S1[Simulated Feed] --> ING[Ingestion Service :8001]
-        S2[Permitted Static Pages] --> ING
+    subgraph Tender_Sources["Tender Sources"]
+        S1["Simulated Feed"] --> ING["Ingestion Service :8001"]
+        S2["Permitted Static Pages"] --> ING
     end
 
-    subgraph Ingestion & Structuring
-        ING --> DEDUP[(SQLite Dedup)]
-        ING --> STR[Structuring Engine]
-        STR -->|Groq API| LLM[Groq Llama-3.3-70b]
-        STR -->|Fallback| RULE[Deterministic Rule Fallback]
+    subgraph Ingestion_Structuring["Ingestion & Structuring"]
+        ING --> DEDUP[("SQLite Dedup")]
+        ING --> STR["Structuring Engine"]
+        STR -->|"Groq API"| LLM["Groq Llama-3.3-70b"]
+        STR -->|"Fallback"| RULE["Deterministic Rule Fallback"]
     end
 
-    subgraph Knowledge Base 68 Records
-        CV[24 CVs] --> KB[(OliveSoft Knowledge Base)]
-        PRJ[14 Projects] --> KB
-        CLI[8 Clients] --> KB
-        TCH[22 Tech Stack] --> KB
+    subgraph Knowledge_Base["Knowledge Base (68 Records)"]
+        CV["24 CVs"] --> KB[("OliveSoft Knowledge Base")]
+        PRJ["14 Projects"] --> KB
+        CLI["8 Clients"] --> KB
+        TCH["22 Tech Stack"] --> KB
     end
 
-    subgraph Hybrid Index
-        KB --> BM25[BM25 Okapi + Tech Tokenizer]
-        KB --> DENSE[Dense Embeddings: E5 / TF-IDF]
-        DENSE --> QDR[Qdrant Vector DB]
-        BM25 & QDR --> FUSION[Reciprocal Rank Fusion RRF]
+    subgraph Hybrid_Index["Hybrid Index"]
+        KB --> BM25["BM25 Okapi + Tech Tokenizer"]
+        KB --> DENSE["Dense Embeddings: E5 / TF-IDF"]
+        DENSE --> QDR["Qdrant Vector DB"]
+        BM25 & QDR --> FUSION["Reciprocal Rank Fusion RRF"]
     end
 
-    subgraph RAG API :8000
-        FUSION --> SEARCH[/search]
-        FUSION --> MATCH[/match-tender]
-        MATCH --> COV[Coverage Matrix]
-        MATCH --> STAFF[Staffing Engine]
-        MATCH --> SCORE[Fit Score 0.0 - 1.0]
+    subgraph RAG_API["RAG API :8000"]
+        FUSION --> SEARCH["/search"]
+        FUSION --> MATCH["/match-tender"]
+        MATCH --> COV["Coverage Matrix"]
+        MATCH --> STAFF["Staffing Engine"]
+        MATCH --> SCORE["Fit Score 0.0 - 1.0"]
     end
 
-    subgraph n8n Orchestrator
-        N8N[n8n Workflow] -->|1. Ingest| ING
-        N8N -->|2. Structure| STR
-        N8N -->|3. Match| MATCH
-        N8N -->|4. If fit_score >= 0.5| GEN[Proposal Generation Node]
-        N8N -->|5. If no_match| NO_GO[Disqualification Notice]
+    subgraph n8n_Orchestrator["n8n Orchestrator"]
+        N8N["n8n Workflow"] -->|"1. Ingest"| ING
+        N8N -->|"2. Structure"| STR
+        N8N -->|"3. Match"| MATCH
+        N8N -->|"4. If fit_score >= 0.5"| GEN["Proposal Generation Node"]
+        N8N -->|"5. If no_match"| NO_GO["Disqualification Notice"]
     end
 ```
 
