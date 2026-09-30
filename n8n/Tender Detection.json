@@ -3,6 +3,22 @@
   "nodes": [
     {
       "parameters": {
+        "httpMethod": "POST",
+        "path": "tender-detection",
+        "responseMode": "lastNode",
+        "options": {}
+      },
+      "type": "n8n-nodes-base.webhook",
+      "typeVersion": 2,
+      "position": [
+        0,
+        150
+      ],
+      "id": "td-webhook",
+      "name": "Webhook: Trigger Detection"
+    },
+    {
+      "parameters": {
         "rule": {
           "interval": [
             {
@@ -313,6 +329,22 @@
         [
           {
             "node": "Trigger Prospect Research Webhook",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Webhook: Trigger Detection": {
+      "main": [
+        [
+          {
+            "node": "Scrape AppelOffres.com",
+            "type": "main",
+            "index": 0
+          },
+          {
+            "node": "Scrape TED Europa API",
             "type": "main",
             "index": 0
           }
