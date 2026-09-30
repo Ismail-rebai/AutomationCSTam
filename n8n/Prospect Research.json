@@ -151,34 +151,6 @@
       ],
       "id": "pr-parse-profile",
       "name": "Parse Prospect Profile"
-    },
-    {
-      "parameters": {
-        "method": "POST",
-        "url": "http://localhost:5678/webhook/generate-proposal",
-        "sendHeaders": true,
-        "headerParameters": {
-          "parameters": [
-            {
-              "name": "Content-Type",
-              "value": "application/json"
-            }
-          ]
-        },
-        "sendBody": true,
-        "specifyBody": "json",
-        "jsonBody": "={\n  \"tender\": {{ JSON.stringify($json.tender) }},\n  \"prospect_profile\": {{ JSON.stringify($json.prospect_profile) }},\n  \"researched_at\": {{ JSON.stringify($json.researched_at) }}\n}",
-        "options": {}
-      },
-      "type": "n8n-nodes-base.httpRequest",
-      "typeVersion": 4.2,
-      "position": [
-        1540,
-        0
-      ],
-      "id": "pr-trigger-proposal",
-      "name": "Trigger Proposal & RAG Webhook",
-      "onError": "continueRegularOutput"
     }
   ],
   "connections": {
@@ -242,17 +214,6 @@
         [
           {
             "node": "Parse Prospect Profile",
-            "type": "main",
-            "index": 0
-          }
-        ]
-      ]
-    },
-    "Parse Prospect Profile": {
-      "main": [
-        [
-          {
-            "node": "Trigger Proposal & RAG Webhook",
             "type": "main",
             "index": 0
           }

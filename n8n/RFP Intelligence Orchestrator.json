@@ -66,7 +66,7 @@
         },
         "sendBody": true,
         "specifyBody": "json",
-        "jsonBody": "={\n  \"id\": {{ JSON.stringify($json.id || ($json.body && $json.body.id) || \"AO-2026-TN-042\") }},\n  \"buyer\": {{ JSON.stringify($json.buyer || ($json.body && $json.body.buyer) || \"Ministère de la Santé\") }},\n  \"country\": {{ JSON.stringify($json.country || ($json.body && $json.body.country) || \"Tunisia\") }},\n  \"description\": {{ JSON.stringify($json.description || ($json.body && $json.body.description) || \"Mise en place d'un système national d'information hospitalier et dossiers médicaux partagés\") }},\n  \"source\": \"appeloffres.com\"\n}",
+        "jsonBody": "={\n  \"id\": {{ JSON.stringify($json.id || ($json.body && $json.body.id) || ($json[0] && $json[0].id) || \"AO-2026-TN-042\") }},\n  \"buyer\": {{ JSON.stringify($json.buyer || ($json.body && $json.body.buyer) || ($json[0] && $json[0].buyer) || \"Ministère de la Santé\") }},\n  \"country\": {{ JSON.stringify($json.country || ($json.body && $json.body.country) || ($json[0] && $json[0].country) || \"Tunisia\") }},\n  \"description\": {{ JSON.stringify($json.description || ($json.body && $json.body.description) || ($json[0] && $json[0].description) || \"Mise en place d'un système national d'information hospitalier et dossiers médicaux partagés\") }},\n  \"source\": \"appeloffres.com\"\n}",
         "options": {
           "timeout": 60000
         }

@@ -200,34 +200,6 @@
       ],
       "id": "td-filter-sort",
       "name": "Filter & Sort Tenders"
-    },
-    {
-      "parameters": {
-        "method": "POST",
-        "url": "http://localhost:5678/webhook/prospect-research",
-        "sendHeaders": true,
-        "headerParameters": {
-          "parameters": [
-            {
-              "name": "Content-Type",
-              "value": "application/json"
-            }
-          ]
-        },
-        "sendBody": true,
-        "specifyBody": "json",
-        "jsonBody": "={\n  \"id\": {{ JSON.stringify($json.id || \"AO-001\") }},\n  \"buyer\": {{ JSON.stringify($json.buyer || \"Organisme Public\") }},\n  \"country\": {{ JSON.stringify($json.country || \"Tunisia\") }},\n  \"description\": {{ JSON.stringify($json.description || \"Système d'information et transformation numérique\") }},\n  \"source\": {{ JSON.stringify($json.source || \"appeloffres.com\") }},\n  \"url\": {{ JSON.stringify($json.url || \"\") }},\n  \"published_date\": {{ JSON.stringify($json.published_date || \"\") }},\n  \"deadline\": {{ JSON.stringify($json.deadline || \"\") }}\n}",
-        "options": {}
-      },
-      "type": "n8n-nodes-base.httpRequest",
-      "typeVersion": 4.2,
-      "position": [
-        1500,
-        0
-      ],
-      "id": "td-trigger-prospect",
-      "name": "Trigger Prospect Research Webhook",
-      "onError": "continueRegularOutput"
     }
   ],
   "connections": {
@@ -318,17 +290,6 @@
         [
           {
             "node": "Filter & Sort Tenders",
-            "type": "main",
-            "index": 0
-          }
-        ]
-      ]
-    },
-    "Filter & Sort Tenders": {
-      "main": [
-        [
-          {
-            "node": "Trigger Prospect Research Webhook",
             "type": "main",
             "index": 0
           }
