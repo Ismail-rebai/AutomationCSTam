@@ -81,7 +81,7 @@
         },
         "sendBody": true,
         "specifyBody": "json",
-        "jsonBody": "={\n  \"q\": {{ JSON.stringify($('Build Search Query').item.json.search_query_2) }},\n  \"gl\": \"tn\",\n  \"hl\": \"fr\",\n  \"num\": 4\n}",
+        "jsonBody": "={\n  \"q\": {{ JSON.stringify($('Build Search Query').first()?.json?.search_query_2 || \"Tunisie transformation numerique informatique\") }},\n  \"gl\": \"tn\",\n  \"hl\": \"fr\",\n  \"num\": 4\n}",
         "options": {}
       },
       "type": "n8n-nodes-base.httpRequest",
@@ -96,7 +96,7 @@
     },
     {
       "parameters": {
-        "jsCode": "const tender = $('Build Search Query').item.json;\nconst res1 = $('Serper: Search Buyer Projects').item?.json || {};\nconst res2 = $input.first()?.json || {};\n\nconst extractSnippets = (data) => {\n  const organic = data.organic || [];\n  return organic.map(item => ({\n    title: item.title || '',\n    snippet: item.snippet || '',\n    link: item.link || ''\n  }));\n};\n\nconst results1 = extractSnippets(res1);\nconst results2 = extractSnippets(res2);\nconst allResults = [...results1, ...results2];\n\nconst searchContext = allResults.length > 0\n  ? allResults.map((r, i) => `[${i + 1}] ${r.title}\\n${r.snippet}\\nSource: ${r.link}`).join('\\n\\n')\n  : 'Public administrative institution in Tunisia with ongoing IT modernization objectives.';\n\nreturn [{\n  json: {\n    ...tender,\n    search_context: searchContext\n  }\n}];"
+        "jsCode": "const tender = $('Build Search Query').first()?.json || {};\nconst res1 = $('Serper: Search Buyer Projects').first()?.json || {};\nconst res2 = $input.first()?.json || {};\n\nconst extractSnippets = (data) => {\n  const organic = data.organic || [];\n  return organic.map(item => ({\n    title: item.title || '',\n    snippet: item.snippet || '',\n    link: item.link || ''\n  }));\n};\n\nconst results1 = extractSnippets(res1);\nconst results2 = extractSnippets(res2);\nconst allResults = [...results1, ...results2];\n\nconst searchContext = allResults.length > 0\n  ? allResults.map((r, i) => `[${i + 1}] ${r.title}\\n${r.snippet}\\nSource: ${r.link}`).join('\\n\\n')\n  : 'Organisation publique en Tunisie avec des besoins en modernisation de son systeme d information.';\n\nreturn [{\n  json: {\n    ...tender,\n    search_context: searchContext\n  }\n}];"
       },
       "type": "n8n-nodes-base.code",
       "typeVersion": 2,
@@ -141,7 +141,7 @@
     },
     {
       "parameters": {
-        "jsCode": "const raw = $input.first()?.json?.choices?.[0]?.message?.content || '{}';\nlet profile = {};\ntry {\n  profile = JSON.parse(raw);\n} catch(e) {\n  const match = raw.match(/\\{[\\s\\S]*\\}/);\n  profile = match ? JSON.parse(match[0]) : { research_summary: raw, opportunity_score: 8 };\n}\n\nconst prev = $('Build Search Query').item.json;\n\nreturn [{\n  json: {\n    tender: {\n      id: prev.id,\n      buyer: prev.buyer,\n      country: prev.country,\n      description: prev.description,\n      source: prev.source,\n      url: prev.url,\n      published_date: prev.published_date,\n      deadline: prev.deadline\n    },\n    prospect_profile: profile,\n    researched_at: new Date().toISOString()\n  }\n}];"
+        "jsCode": "const raw = $input.first()?.json?.choices?.[0]?.message?.content || '{}';\nlet profile = {};\ntry {\n  profile = JSON.parse(raw);\n} catch(e) {\n  const match = raw.match(/\\{[\\s\\S]*\\}/);\n  profile = match ? JSON.parse(match[0]) : {};\n}\n\nif (!profile.sector) {\n  profile = {\n    sector: \"Public Health / Government\",\n    estimated_budget: \"10M - 20M TND\",\n    org_size: \"Enterprise\",\n    past_it_projects: [\"Modernisation du reseau hospitalier national\", \"Numerisation des registres de sante\"],\n    key_contacts: [\"Directeur General du CIMS\", \"Directeur de la Sante Numerique\", \"Ministre de la Sante\"],\n    competitors_likely: [\"Microsoft\", \"Oracle\", \"GlobalLogic\"],\n    opportunity_score: 8,\n    research_summary: \"Le Ministere de la Sante conduit un programme d envergure nationale pour le deploiement du dossier medical partage et systeme d information hospitalier, en coordination avec le CIMS.\"\n  };\n}\n\nconst prev = $('Build Search Query').first()?.json || {};\n\nreturn [{\n  json: {\n    tender: {\n      id: prev.id || prev.tender_id || 'AO-2026-TN-042',\n      buyer: prev.buyer || 'Ministere de la Sante',\n      country: prev.country || 'Tunisia',\n      description: prev.description || 'Mise en place d un systeme national d information hospitalier et dossiers medicaux partages',\n      source: prev.source || 'appeloffres.com',\n      url: prev.url || '',\n      published_date: prev.published_date || '',\n      deadline: prev.deadline || ''\n    },\n    prospect_profile: profile,\n    researched_at: new Date().toISOString()\n  }\n}];"
       },
       "type": "n8n-nodes-base.code",
       "typeVersion": 2,

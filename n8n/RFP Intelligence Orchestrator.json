@@ -96,7 +96,7 @@
         },
         "sendBody": true,
         "specifyBody": "json",
-        "jsonBody": "={\n  \"tender\": {{ JSON.stringify($json.tender || ($json.body && $json.body.tender) || { \"id\": \"AO-2026-TN-042\", \"buyer\": \"Ministère de la Santé\", \"country\": \"Tunisia\", \"description\": \"Mise en place d'un système national d'information hospitalier et dossiers médicaux partagés\" }) }},\n  \"prospect_profile\": {{ JSON.stringify($json.prospect_profile || ($json.body && $json.body.prospect_profile) || {}) }}\n}",
+        "jsonBody": "={\n  \"tender\": {{ JSON.stringify($json.tender || { \"id\": \"AO-2026-TN-042\", \"buyer\": \"Ministère de la Santé\", \"country\": \"Tunisia\", \"description\": \"Mise en place d'un système national d'information hospitalier et dossiers médicaux partagés\" }) }},\n  \"prospect_profile\": {{ JSON.stringify($json.prospect_profile || {}) }}\n}",
         "options": {
           "timeout": 90000
         }
@@ -113,7 +113,7 @@
     },
     {
       "parameters": {
-        "jsCode": "let result = $input.first()?.json || {};\nwhile (result && result.body) { result = result.body; }\n\nreturn [{\n  json: {\n    pipeline_status: 'COMPLETED_SUCCESSFULLY',\n    orchestrated_at: new Date().toISOString(),\n    tender: result.tender,\n    prospect_profile: result.prospect_profile,\n    rag_matching: result.rag_matching,\n    proposal_draft: result.proposal_draft,\n    pptx_deliverable: result.pptx_deliverable,\n    dashboard_status: 'READY_FOR_COMMERCIAL_REVIEW'\n  }\n}];"
+        "jsCode": "let result = $input.first()?.json || {};\nwhile (result && result.body) { result = result.body; }\n\n// If prospect_profile was passed from Step 2, ensure it is preserved\nconst step2Data = $('2. Execute Prospect Research Module (Serper + Groq)').first()?.json || {};\nconst finalProspect = (result.prospect_profile && Object.keys(result.prospect_profile).length > 0)\n  ? result.prospect_profile\n  : (step2Data.prospect_profile || (step2Data.body && step2Data.body.prospect_profile) || {});\n\nreturn [{\n  json: {\n    pipeline_status: 'COMPLETED_SUCCESSFULLY',\n    orchestrated_at: new Date().toISOString(),\n    tender: result.tender || step2Data.tender || { id: \"AO-2026-TN-042\", buyer: \"Ministère de la Santé\" },\n    prospect_profile: finalProspect,\n    rag_matching: result.rag_matching,\n    proposal_draft: result.proposal_draft,\n    pptx_deliverable: result.pptx_deliverable,\n    dashboard_status: 'READY_FOR_COMMERCIAL_REVIEW'\n  }\n}];"
       },
       "type": "n8n-nodes-base.code",
       "typeVersion": 2,
