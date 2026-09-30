@@ -218,23 +218,34 @@ async def match_tender(req: MatchTenderRequest):
     # Get requirements
     requirements = req.requirements
     if not requirements and req.description:
-        from src.structuring import structure_tender
-        structured = await structure_tender({
-            "tender_id": req.tender_id or "UNKNOWN",
-            "title": req.title or "",
-            "description": req.description
-        })
-        if structured and structured.requirements:
-            requirements = [
-                RequirementInput(
-                    req_id=r.req_id,
-                    text=r.text,
-                    category=r.category,
-                    tech_keywords=r.tech_keywords
-                )
-                for r in structured.requirements
-            ]
-        else:
+        try:
+            from src.structuring import structure_tender
+            structured = await structure_tender({
+                "tender_id": req.tender_id or "UNKNOWN",
+                "title": req.title or "",
+                "description": req.description
+            })
+            if structured and structured.requirements:
+                requirements = [
+                    RequirementInput(
+                        req_id=r.req_id,
+                        text=r.text,
+                        category=r.category,
+                        tech_keywords=r.tech_keywords
+                    )
+                    for r in structured.requirements
+                ]
+            else:
+                requirements = [
+                    RequirementInput(
+                        req_id="REQ-1",
+                        text=req.description,
+                        category="technical",
+                        tech_keywords=[]
+                    )
+                ]
+        except Exception as e:
+            logger.warning("Structuring failed (%s), fallback to raw description", e)
             requirements = [
                 RequirementInput(
                     req_id="REQ-1",
