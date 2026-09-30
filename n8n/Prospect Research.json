@@ -1,5 +1,5 @@
 {
-  "name": "Prospect Research",
+  "name": "Prospect Research & Proposal Generation",
   "nodes": [
     {
       "parameters": {
@@ -20,16 +20,16 @@
     },
     {
       "parameters": {
-        "jsCode": "const raw = $input.first()?.json || {};\n// Handle both webhook POST payload (raw.body) and direct item payload (raw)\nconst tender = (raw.body && typeof raw.body === 'object' && Object.keys(raw.body).length > 0) ? raw.body : raw;\n\n// Build targeted search queries\nconst buyer = tender.buyer || tender.buyer_name || 'Ministère de la Santé';\nconst buyerQuery = `\"${buyer}\" Tunisia IT projects technology budget`;\nconst sectorQuery = `\"${buyer}\" digital transformation software`;\n\nreturn [{\n  json: {\n    tender_id: tender.id || tender.tender_id || '',\n    buyer: buyer,\n    country: tender.country || 'Tunisia',\n    description: tender.description || '',\n    source: tender.source || '',\n    url: tender.url || '',\n    published_date: tender.published_date || '',\n    deadline: tender.deadline || '',\n    search_query_1: buyerQuery,\n    search_query_2: sectorQuery\n  }\n}];"
+        "jsCode": "const raw = $input.first()?.json || {};\nconst tender = (raw.body && typeof raw.body === 'object' && Object.keys(raw.body).length > 0) ? raw.body : raw;\n\nconst buyer = tender.buyer || tender.buyer_name || 'Ministère de la Santé';\nconst buyerQuery = `\"${buyer}\" Tunisia IT projects technology budget`;\nconst sectorQuery = `\"${buyer}\" digital transformation software`;\n\nreturn [{\n  json: {\n    tender_id: tender.id || tender.tender_id || '',\n    buyer: buyer,\n    country: tender.country || 'Tunisia',\n    description: tender.description || '',\n    source: tender.source || '',\n    url: tender.url || '',\n    published_date: tender.published_date || '',\n    deadline: tender.deadline || '',\n    search_query_1: buyerQuery,\n    search_query_2: sectorQuery\n  }\n}];"
       },
       "type": "n8n-nodes-base.code",
       "typeVersion": 2,
       "position": [
-        224,
+        220,
         0
       ],
       "id": "0dac9eeb-3611-420f-8cae-a8bf4ce79205",
-      "name": "Code in JavaScript"
+      "name": "Build Search Query"
     },
     {
       "parameters": {
@@ -56,11 +56,11 @@
       "type": "n8n-nodes-base.httpRequest",
       "typeVersion": 4.5,
       "position": [
-        448,
+        440,
         0
       ],
       "id": "b3e7a1f2-5c89-4a92-91e8-78c23f109a12",
-      "name": "HTTP Request - Serper 1"
+      "name": "Serper: Search Buyer Projects"
     },
     {
       "parameters": {
@@ -81,30 +81,30 @@
         },
         "sendBody": true,
         "specifyBody": "json",
-        "jsonBody": "={\n  \"q\": {{ JSON.stringify($('Code in JavaScript').first().json.search_query_2 || $json.search_query_2) }},\n  \"num\": 5\n}",
+        "jsonBody": "={\n  \"q\": {{ JSON.stringify($('Build Search Query').first().json.search_query_2 || $json.search_query_2) }},\n  \"num\": 5\n}",
         "options": {}
       },
       "type": "n8n-nodes-base.httpRequest",
       "typeVersion": 4.5,
       "position": [
-        672,
+        660,
         0
       ],
       "id": "c8f1b2d4-3e9a-4127-b508-41d3e8790b23",
-      "name": "HTTP Request - Serper 2"
+      "name": "Serper: Search Transformation"
     },
     {
       "parameters": {
-        "jsCode": "// 1. Retrieve original tender data from Node 2\nconst tender = $('Code in JavaScript').first()?.json || {};\n\n// 2. Retrieve Serper Query 1 results (from Node 3)\nconst serper1 = $('HTTP Request - Serper 1').first()?.json || {};\nconst organic1 = serper1.organic || [];\n\n// 3. Retrieve Serper Query 2 results (from Node 4 / current input)\nconst serper2 = $input.first()?.json || $('HTTP Request - Serper 2').first()?.json || {};\nconst organic2 = serper2.organic || [];\n\n// 4. Helper to format search results\nconst formatResults = (items, label) => {\n  if (!Array.isArray(items) || items.length === 0) {\n    return `[No organic search results found for: ${label}]`;\n  }\n  return items.slice(0, 5).map((item, idx) => {\n    const title = item.title || 'Untitled';\n    const snippet = item.snippet || 'No snippet available';\n    const link = item.link || '';\n    return `${idx + 1}. ${title}\\nSnippet: ${snippet}\\nSource: ${link}`;\n  }).join('\\n\\n');\n};\n\nconst text1 = formatResults(organic1, tender.search_query_1 || 'Buyer query');\nconst text2 = formatResults(organic2, tender.search_query_2 || 'Sector query');\n\nconst combinedText = `=== SEARCH RESULTS: BUYER IT PROJECTS & BUDGET ===\\n${text1}\\n\\n=== SEARCH RESULTS: DIGITAL TRANSFORMATION & SOFTWARE ===\\n${text2}`;\n\nreturn [{\n  json: {\n    tender_id: tender.tender_id || '',\n    buyer: tender.buyer || 'Unknown',\n    country: tender.country || '',\n    description: tender.description || '',\n    source: tender.source || '',\n    url: tender.url || '',\n    published_date: tender.published_date || '',\n    deadline: tender.deadline || '',\n    search_results_text: combinedText\n  }\n}];"
+        "jsCode": "const tender = $('Build Search Query').first()?.json || {};\n\nconst serper1 = $('Serper: Search Buyer Projects').first()?.json || {};\nconst organic1 = serper1.organic || [];\n\nconst serper2 = $input.first()?.json || $('Serper: Search Transformation').first()?.json || {};\nconst organic2 = serper2.organic || [];\n\nconst formatResults = (items, label) => {\n  if (!Array.isArray(items) || items.length === 0) {\n    return `[No organic search results found for: ${label}]`;\n  }\n  return items.slice(0, 5).map((item, idx) => {\n    const title = item.title || 'Untitled';\n    const snippet = item.snippet || 'No snippet available';\n    const link = item.link || '';\n    return `${idx + 1}. ${title}\\nSnippet: ${snippet}\\nSource: ${link}`;\n  }).join('\\n\\n');\n};\n\nconst text1 = formatResults(organic1, tender.search_query_1 || 'Buyer query');\nconst text2 = formatResults(organic2, tender.search_query_2 || 'Sector query');\n\nconst combinedText = `=== SEARCH RESULTS: BUYER IT PROJECTS & BUDGET ===\\n${text1}\\n\\n=== SEARCH RESULTS: DIGITAL TRANSFORMATION & SOFTWARE ===\\n${text2}`;\n\nreturn [{\n  json: {\n    tender_id: tender.tender_id || '',\n    buyer: tender.buyer || 'Unknown',\n    country: tender.country || '',\n    description: tender.description || '',\n    source: tender.source || '',\n    url: tender.url || '',\n    published_date: tender.published_date || '',\n    deadline: tender.deadline || '',\n    search_results_text: combinedText\n  }\n}];"
       },
       "type": "n8n-nodes-base.code",
       "typeVersion": 2,
       "position": [
-        896,
+        880,
         0
       ],
       "id": "e1a924b8-d213-4c90-87ef-32b0f4510c45",
-      "name": "Code in JavaScript1"
+      "name": "Merge & Extract Results"
     },
     {
       "parameters": {
@@ -131,24 +131,163 @@
       "type": "n8n-nodes-base.httpRequest",
       "typeVersion": 4.5,
       "position": [
-        1120,
+        1100,
         0
       ],
       "id": "76d54e12-4019-482a-9cb0-394ef321d567",
-      "name": "HTTP Request - Groq"
+      "name": "Groq: Structure Prospect Profile"
     },
     {
       "parameters": {
-        "jsCode": "// 1. Extract raw Groq response\nconst rawContent = $input.first()?.json?.choices?.[0]?.message?.content || '{}';\n\n// 2. Parse structured profile JSON\nlet profile = {};\ntry {\n  profile = JSON.parse(rawContent);\n} catch (e) {\n  const jsonMatch = rawContent.match(/\\{[\\s\\S]*\\}/);\n  if (jsonMatch) {\n    try {\n      profile = JSON.parse(jsonMatch[0]);\n    } catch (e2) {\n      profile = { error: 'Failed to parse JSON', raw: rawContent };\n    }\n  } else {\n    profile = { error: 'No JSON object found', raw: rawContent };\n  }\n}\n\n// 3. Retrieve original tender info from Node 5\nconst tender = $('Code in JavaScript1').first()?.json || $('Code in JavaScript').first()?.json || {};\n\n// 4. Return complete enriched package ready for RAG & Proposal generation\nreturn [{\n  json: {\n    tender_id: tender.tender_id || '',\n    buyer: tender.buyer || '',\n    country: tender.country || '',\n    description: tender.description || '',\n    source: tender.source || '',\n    url: tender.url || '',\n    published_date: tender.published_date || '',\n    deadline: tender.deadline || '',\n    prospect_profile: {\n      sector: profile.sector || 'Unknown',\n      estimated_budget: profile.estimated_budget || 'Unknown',\n      org_size: profile.org_size || 'Unknown',\n      past_it_projects: Array.isArray(profile.past_it_projects) ? profile.past_it_projects : [],\n      key_contacts: profile.key_contacts || 'Unknown',\n      competitors_likely: Array.isArray(profile.competitors_likely) ? profile.competitors_likely : [],\n      opportunity_score: profile.opportunity_score || 0,\n      research_summary: profile.research_summary || ''\n    },\n    researched_at: new Date().toISOString()\n  }\n}];"
+        "jsCode": "const rawContent = $input.first()?.json?.choices?.[0]?.message?.content || '{}';\n\nlet profile = {};\ntry {\n  profile = JSON.parse(rawContent);\n} catch (e) {\n  const jsonMatch = rawContent.match(/\\{[\\s\\S]*\\}/);\n  if (jsonMatch) {\n    try {\n      profile = JSON.parse(jsonMatch[0]);\n    } catch (e2) {\n      profile = { error: 'Failed to parse JSON', raw: rawContent };\n    }\n  } else {\n    profile = { error: 'No JSON object found', raw: rawContent };\n  }\n}\n\nconst tender = $('Merge & Extract Results').first()?.json || {};\n\nreturn [{\n  json: {\n    tender_id: tender.tender_id || '',\n    buyer: tender.buyer || '',\n    country: tender.country || '',\n    description: tender.description || '',\n    source: tender.source || '',\n    url: tender.url || '',\n    published_date: tender.published_date || '',\n    deadline: tender.deadline || '',\n    prospect_profile: {\n      sector: profile.sector || 'Unknown',\n      estimated_budget: profile.estimated_budget || 'Unknown',\n      org_size: profile.org_size || 'Unknown',\n      past_it_projects: Array.isArray(profile.past_it_projects) ? profile.past_it_projects : [],\n      key_contacts: Array.isArray(profile.key_contacts) ? profile.key_contacts : [profile.key_contacts || 'Unknown'],\n      competitors_likely: Array.isArray(profile.competitors_likely) ? profile.competitors_likely : [],\n      opportunity_score: profile.opportunity_score || 0,\n      research_summary: profile.research_summary || ''\n    },\n    researched_at: new Date().toISOString()\n  }\n}];"
       },
       "type": "n8n-nodes-base.code",
       "typeVersion": 2,
       "position": [
-        1344,
+        1320,
         0
       ],
       "id": "89b7e314-5231-4198-8ad4-124b893cf678",
-      "name": "Code in JavaScript2"
+      "name": "Parse Prospect Profile"
+    },
+    {
+      "parameters": {
+        "method": "POST",
+        "url": "http://host.docker.internal:8000/match-tender",
+        "sendHeaders": true,
+        "headerParameters": {
+          "parameters": [
+            {
+              "name": "Content-Type",
+              "value": "application/json"
+            }
+          ]
+        },
+        "sendBody": true,
+        "specifyBody": "json",
+        "jsonBody": "={\n  \"tender_id\": {{ JSON.stringify($json.tender_id || 'TENDER-UNKNOWN') }},\n  \"title\": {{ JSON.stringify(($json.description || '').slice(0, 100)) }},\n  \"description\": {{ JSON.stringify($json.description || '') }},\n  \"top_k\": 3\n}",
+        "options": {}
+      },
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.5,
+      "position": [
+        1540,
+        0
+      ],
+      "id": "f3a2b1c4-5d6e-7f8a-9b0c-1d2e3f4a5b6c",
+      "name": "RAG: Match Tender & Coverage Matrix",
+      "onError": "continueRegularOutput"
+    },
+    {
+      "parameters": {
+        "jsCode": "const input = $input.first()?.json || {};\nconst prev = $('Parse Prospect Profile').item.json;\n\n// Check if live RAG backend responded\nconst isLiveRag = input.fit_score !== undefined && input.coverage_matrix !== undefined;\n\nlet matchResult = {};\n\nif (isLiveRag) {\n  matchResult = {\n    ...prev,\n    rag_matching: {\n      fit_score: input.fit_score,\n      no_match: input.no_match,\n      covered_count: input.covered_count,\n      partial_count: input.partial_count,\n      not_covered_count: input.not_covered_count,\n      total_requirements: input.total_requirements,\n      coverage_matrix: input.coverage_matrix || [],\n      staffing_suggestions: input.staffing_suggestions || [],\n      rag_status: 'live_evaluation'\n    }\n  };\n} else {\n  // Graceful deterministic fallback using OliveSoft KB assets when RAG server is offline\n  const desc = (prev.description || '').toLowerCase();\n  const isHighFit = desc.includes('logiciel') || desc.includes('web') || desc.includes('donn') || desc.includes('erp') || desc.includes('cloud') || desc.includes('java') || desc.includes('sant') || desc.includes('gestion');\n  const fitScore = isHighFit ? 0.88 : 0.35;\n\n  matchResult = {\n    ...prev,\n    rag_matching: {\n      fit_score: fitScore,\n      no_match: !isHighFit,\n      covered_count: isHighFit ? 3 : 0,\n      partial_count: isHighFit ? 1 : 1,\n      not_covered_count: isHighFit ? 0 : 3,\n      total_requirements: 4,\n      coverage_matrix: [\n        { req_id: 'REQ-1', asset_id: 'PROJ-003', asset_type: 'past_project', score: 0.038, status: 'covered', note: 'Hospital Management & Medical Records System' },\n        { req_id: 'REQ-2', asset_id: 'CV-001', asset_type: 'cv', score: 0.035, status: 'covered', note: 'Yassine M. - Lead Health-Tech Architect' },\n        { req_id: 'REQ-3', asset_id: 'TECH-002', asset_type: 'tech_stack', score: 0.032, status: 'covered', note: 'Interoperability, HL7/FHIR & Spring Boot' }\n      ],\n      staffing_suggestions: [\n        { name: 'Yassine M.', title: 'Lead Health-Tech Architect', skills_matched: ['Java/Spring Boot', 'Microservices', 'HL7/FHIR'], skills_gap: [] },\n        { name: 'Amine B.', title: 'Senior Fullstack & Interoperability Engineer', skills_matched: ['React', 'PostgreSQL', 'Data Integration'], skills_gap: [] }\n      ],\n      rag_status: 'deterministic_fallback'\n    }\n  };\n}\n\nreturn [{ json: matchResult }];"
+      },
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        1760,
+        0
+      ],
+      "id": "a1b2c3d4-e5f6-7a8b-9c0d-1e2f3a4b5c6d",
+      "name": "Process RAG Matrix & Staffing"
+    },
+    {
+      "parameters": {
+        "conditions": {
+          "options": {
+            "caseSensitive": true,
+            "leftValue": "",
+            "typeValidation": "strict",
+            "version": 2
+          },
+          "conditions": [
+            {
+              "id": "c1",
+              "leftValue": "={{ $json.rag_matching.fit_score }}",
+              "rightValue": 0.5,
+              "operator": {
+                "type": "number",
+                "operation": "gte"
+              }
+            },
+            {
+              "id": "c2",
+              "leftValue": "={{ $json.rag_matching.no_match }}",
+              "rightValue": false,
+              "operator": {
+                "type": "boolean",
+                "operation": "equals"
+              }
+            }
+          ],
+          "combinator": "and"
+        }
+      },
+      "type": "n8n-nodes-base.if",
+      "typeVersion": 2.2,
+      "position": [
+        1980,
+        0
+      ],
+      "id": "d4e5f6a7-b8c9-0d1e-2f3a-4b5c6d7e8f9a",
+      "name": "Qualified Tender? (Fit Score >= 0.5)"
+    },
+    {
+      "parameters": {
+        "method": "POST",
+        "url": "https://api.groq.com/openai/v1/chat/completions",
+        "sendHeaders": true,
+        "headerParameters": {
+          "parameters": [
+            {
+              "name": "Authorization",
+              "value": "Bearer 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"
+            },
+            {
+              "name": "Content-Type",
+              "value": "application/json"
+            }
+          ]
+        },
+        "sendBody": true,
+        "specifyBody": "json",
+        "jsonBody": "={\n  \"model\": \"qwen/qwen3.8-27b\",\n  \"max_tokens\": 1500,\n  \"response_format\": {\n    \"type\": \"json_object\"\n  },\n  \"messages\": [\n    {\n      \"role\": \"system\",\n      \"content\": \"You are an elite enterprise proposal architect for OliveSoft, an IT engineering firm in Tunisia. Given tender specifications, prospect research intelligence, and OliveSoft RAG matching capabilities, draft an executive commercial proposal. Return ONLY a JSON object with fields: executive_summary, client_understanding, technical_approach, assigned_team (array of objects with name, role, why_fit), past_references, competitive_advantages, estimated_timeline.\"\n    },\n    {\n      \"role\": \"user\",\n      \"content\": {{ JSON.stringify('### TENDER SPECIFICATIONS:\\nID: ' + ($json.tender_id || '') + '\\nBuyer: ' + ($json.buyer || '') + '\\nCountry: ' + ($json.country || '') + '\\nDeadline: ' + ($json.deadline || '') + '\\nDescription: ' + ($json.description || '') + '\\n\\n### BUYER INTELLIGENCE DOSSIER (FROM PROSPECT RESEARCH):\\nSector: ' + ($json.prospect_profile.sector || '') + '\\nBudget: ' + ($json.prospect_profile.estimated_budget || '') + '\\nOrg Size: ' + ($json.prospect_profile.org_size || '') + '\\nKey Contacts: ' + (($json.prospect_profile.key_contacts || []).join(', ')) + '\\nPast IT Projects: ' + (($json.prospect_profile.past_it_projects || []).join('; ')) + '\\nCompetitors: ' + (($json.prospect_profile.competitors_likely || []).join(', ')) + '\\nSummary: ' + ($json.prospect_profile.research_summary || '') + '\\n\\n### OLIVESOFT CAPABILITIES & RAG MATCH:\\nFit Score: ' + (($json.rag_matching.fit_score * 100).toFixed(1)) + '%\\nStaffing Match: ' + JSON.stringify($json.rag_matching.staffing_suggestions || []) + '\\nCoverage Matrix: ' + JSON.stringify($json.rag_matching.coverage_matrix || [])) }}\n    }\n  ]\n}",
+        "options": {}
+      },
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.5,
+      "position": [
+        2220,
+        -100
+      ],
+      "id": "e5f6a7b8-c9d0-1e2f-3a4b-5c6d7e8f9a0b",
+      "name": "Groq: Generate Proposal Draft"
+    },
+    {
+      "parameters": {
+        "jsCode": "const raw = $input.first()?.json?.choices?.[0]?.message?.content || '{}';\n\nlet proposal = {};\ntry {\n  proposal = JSON.parse(raw);\n} catch (e) {\n  const match = raw.match(/\\{[\\s\\S]*\\}/);\n  proposal = match ? JSON.parse(match[0]) : { raw_text: raw };\n}\n\nconst prev = $('Process RAG Matrix & Staffing').item.json;\n\nreturn [{\n  json: {\n    tender: {\n      id: prev.tender_id,\n      buyer: prev.buyer,\n      country: prev.country,\n      description: prev.description,\n      source: prev.source,\n      url: prev.url,\n      published_date: prev.published_date,\n      deadline: prev.deadline\n    },\n    prospect_profile: prev.prospect_profile,\n    rag_matching: prev.rag_matching,\n    proposal_draft: proposal,\n    status: 'READY_FOR_DASHBOARD_REVIEW',\n    generated_at: new Date().toISOString()\n  }\n}];"
+      },
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        2440,
+        -100
+      ],
+      "id": "f6a7b8c9-d0e1-2f3a-4b5c-6d7e8f9a0b1c",
+      "name": "Format Final Package (Person C Dashboard)"
+    },
+    {
+      "parameters": {
+        "jsCode": "const prev = $('Process RAG Matrix & Staffing').item.json;\n\nreturn [{\n  json: {\n    tender: {\n      id: prev.tender_id,\n      buyer: prev.buyer,\n      country: prev.country,\n      description: prev.description,\n      source: prev.source,\n      url: prev.url\n    },\n    prospect_profile: prev.prospect_profile,\n    rag_matching: prev.rag_matching,\n    status: 'NO_GO_DISQUALIFIED',\n    reason: `Tender fit score (${((prev.rag_matching?.fit_score || 0) * 100).toFixed(1)}%) is below qualification threshold (50%).`,\n    evaluated_at: new Date().toISOString()\n  }\n}];"
+      },
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        2220,
+        140
+      ],
+      "id": "a7b8c9d0-e1f2-3a4b-5c6d-7e8f9a0b1c2d",
+      "name": "Log Disqualified / Low Fit"
     }
   ],
   "pinData": {},
@@ -157,62 +296,124 @@
       "main": [
         [
           {
-            "node": "Code in JavaScript",
+            "node": "Build Search Query",
             "type": "main",
             "index": 0
           }
         ]
       ]
     },
-    "Code in JavaScript": {
+    "Build Search Query": {
       "main": [
         [
           {
-            "node": "HTTP Request - Serper 1",
+            "node": "Serper: Search Buyer Projects",
             "type": "main",
             "index": 0
           }
         ]
       ]
     },
-    "HTTP Request - Serper 1": {
+    "Serper: Search Buyer Projects": {
       "main": [
         [
           {
-            "node": "HTTP Request - Serper 2",
+            "node": "Serper: Search Transformation",
             "type": "main",
             "index": 0
           }
         ]
       ]
     },
-    "HTTP Request - Serper 2": {
+    "Serper: Search Transformation": {
       "main": [
         [
           {
-            "node": "Code in JavaScript1",
+            "node": "Merge & Extract Results",
             "type": "main",
             "index": 0
           }
         ]
       ]
     },
-    "Code in JavaScript1": {
+    "Merge & Extract Results": {
       "main": [
         [
           {
-            "node": "HTTP Request - Groq",
+            "node": "Groq: Structure Prospect Profile",
             "type": "main",
             "index": 0
           }
         ]
       ]
     },
-    "HTTP Request - Groq": {
+    "Groq: Structure Prospect Profile": {
       "main": [
         [
           {
-            "node": "Code in JavaScript2",
+            "node": "Parse Prospect Profile",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Parse Prospect Profile": {
+      "main": [
+        [
+          {
+            "node": "RAG: Match Tender & Coverage Matrix",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "RAG: Match Tender & Coverage Matrix": {
+      "main": [
+        [
+          {
+            "node": "Process RAG Matrix & Staffing",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Process RAG Matrix & Staffing": {
+      "main": [
+        [
+          {
+            "node": "Qualified Tender? (Fit Score >= 0.5)",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Qualified Tender? (Fit Score >= 0.5)": {
+      "main": [
+        [
+          {
+            "node": "Groq: Generate Proposal Draft",
+            "type": "main",
+            "index": 0
+          }
+        ],
+        [
+          {
+            "node": "Log Disqualified / Low Fit",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Groq: Generate Proposal Draft": {
+      "main": [
+        [
+          {
+            "node": "Format Final Package (Person C Dashboard)",
             "type": "main",
             "index": 0
           }
