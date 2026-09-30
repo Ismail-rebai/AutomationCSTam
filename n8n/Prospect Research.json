@@ -19,7 +19,7 @@
     },
     {
       "parameters": {
-        "jsCode": "const tender = $input.first().json.body || $input.first().json;\nconst buyer = tender.buyer || 'Organisme Public';\nconst country = tender.country || 'Tunisia';\n\nconst buyerQuery = `\"${buyer}\" ${country} IT projects technology budget`;\nconst sectorQuery = `\"${buyer}\" digital transformation software`;\n\nreturn [{\n  json: {\n    ...tender,\n    tender_id: tender.id,\n    buyer,\n    country,\n    search_query_1: buyerQuery,\n    search_query_2: sectorQuery\n  }\n}];"
+        "jsCode": "let tender = $input.first().json;\nwhile (tender && tender.body) { tender = tender.body; }\nif (tender && tender.tender) { tender = { ...tender, ...tender.tender }; }\n\nconst buyer = (tender && tender.buyer) || 'Organisme Public Tunisien';\nconst country = (tender && tender.country) || 'Tunisia';\nconst desc = (tender && (tender.description || tender.title)) || \"Modernisation du système d'information et services numériques\";\nconst id = (tender && (tender.id || tender.tender_id)) || 'AO-2026-001';\n\nconst buyerQuery = `\"${buyer}\" ${country} IT projects technology budget`;\nconst sectorQuery = `\"${buyer}\" digital transformation software`;\n\nreturn [{\n  json: {\n    id,\n    tender_id: id,\n    buyer,\n    country,\n    description: desc,\n    source: (tender && tender.source) || 'appeloffres.com',\n    url: (tender && tender.url) || '',\n    published_date: (tender && tender.published_date) || '',\n    deadline: (tender && tender.deadline) || '',\n    search_query_1: buyerQuery,\n    search_query_2: sectorQuery\n  }\n}];"
       },
       "type": "n8n-nodes-base.code",
       "typeVersion": 2,
@@ -141,7 +141,7 @@
     },
     {
       "parameters": {
-        "jsCode": "const raw = $input.first()?.json?.choices?.[0]?.message?.content || '{}';\nlet profile = {};\ntry {\n  profile = JSON.parse(raw);\n} catch(e) {\n  const match = raw.match(/\\{[\\s\\S]*\\}/);\n  profile = match ? JSON.parse(match[0]) : { research_summary: raw, opportunity_score: 5 };\n}\n\nconst prev = $('Merge & Extract Results').item.json;\n\nreturn [{\n  json: {\n    tender: {\n      id: prev.tender_id || prev.id,\n      buyer: prev.buyer,\n      country: prev.country,\n      description: prev.description,\n      source: prev.source,\n      url: prev.url,\n      published_date: prev.published_date,\n      deadline: prev.deadline\n    },\n    prospect_profile: profile,\n    researched_at: new Date().toISOString()\n  }\n}];"
+        "jsCode": "const raw = $input.first()?.json?.choices?.[0]?.message?.content || '{}';\nlet profile = {};\ntry {\n  profile = JSON.parse(raw);\n} catch(e) {\n  const match = raw.match(/\\{[\\s\\S]*\\}/);\n  profile = match ? JSON.parse(match[0]) : { research_summary: raw, opportunity_score: 8 };\n}\n\nconst prev = $('Build Search Query').item.json;\n\nreturn [{\n  json: {\n    tender: {\n      id: prev.id,\n      buyer: prev.buyer,\n      country: prev.country,\n      description: prev.description,\n      source: prev.source,\n      url: prev.url,\n      published_date: prev.published_date,\n      deadline: prev.deadline\n    },\n    prospect_profile: profile,\n    researched_at: new Date().toISOString()\n  }\n}];"
       },
       "type": "n8n-nodes-base.code",
       "typeVersion": 2,
@@ -167,7 +167,7 @@
         },
         "sendBody": true,
         "specifyBody": "json",
-        "jsonBody": "={{ JSON.stringify($json) }}",
+        "jsonBody": "={\n  \"tender\": {{ JSON.stringify($json.tender) }},\n  \"prospect_profile\": {{ JSON.stringify($json.prospect_profile) }},\n  \"researched_at\": {{ JSON.stringify($json.researched_at) }}\n}",
         "options": {}
       },
       "type": "n8n-nodes-base.httpRequest",

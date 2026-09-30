@@ -36,7 +36,7 @@
         },
         "sendBody": true,
         "specifyBody": "json",
-        "jsonBody": "={\n  \"trigger_source\": \"master_orchestrator\",\n  \"requested_at\": new Date().toISOString()\n}",
+        "jsonBody": "={\n  \"trigger_source\": \"master_orchestrator\",\n  \"default_tender\": {\n    \"id\": \"AO-2026-TN-042\",\n    \"buyer\": \"Ministère de la Santé\",\n    \"country\": \"Tunisia\",\n    \"description\": \"Mise en place d'un système national d'information hospitalier et dossiers médicaux partagés\",\n    \"source\": \"appeloffres.com\"\n  }\n}",
         "options": {
           "timeout": 60000
         }
@@ -66,7 +66,7 @@
         },
         "sendBody": true,
         "specifyBody": "json",
-        "jsonBody": "={{ JSON.stringify($json.body || $json) }}",
+        "jsonBody": "={\n  \"id\": {{ JSON.stringify($json.id || ($json.body && $json.body.id) || \"AO-2026-TN-042\") }},\n  \"buyer\": {{ JSON.stringify($json.buyer || ($json.body && $json.body.buyer) || \"Ministère de la Santé\") }},\n  \"country\": {{ JSON.stringify($json.country || ($json.body && $json.body.country) || \"Tunisia\") }},\n  \"description\": {{ JSON.stringify($json.description || ($json.body && $json.body.description) || \"Mise en place d'un système national d'information hospitalier et dossiers médicaux partagés\") }},\n  \"source\": \"appeloffres.com\"\n}",
         "options": {
           "timeout": 60000
         }
@@ -96,7 +96,7 @@
         },
         "sendBody": true,
         "specifyBody": "json",
-        "jsonBody": "={{ JSON.stringify($json.body || $json) }}",
+        "jsonBody": "={\n  \"tender\": {{ JSON.stringify($json.tender || ($json.body && $json.body.tender) || { \"id\": \"AO-2026-TN-042\", \"buyer\": \"Ministère de la Santé\", \"country\": \"Tunisia\", \"description\": \"Mise en place d'un système national d'information hospitalier et dossiers médicaux partagés\" }) }},\n  \"prospect_profile\": {{ JSON.stringify($json.prospect_profile || ($json.body && $json.body.prospect_profile) || {}) }}\n}",
         "options": {
           "timeout": 90000
         }
@@ -113,7 +113,7 @@
     },
     {
       "parameters": {
-        "jsCode": "const result = $input.first()?.json?.body || $input.first()?.json || {};\n\nreturn [{\n  json: {\n    pipeline_status: 'COMPLETED_SUCCESSFULLY',\n    orchestrated_at: new Date().toISOString(),\n    deliverable: result,\n    dashboard_stream_ready: true\n  }\n}];"
+        "jsCode": "let result = $input.first()?.json || {};\nwhile (result && result.body) { result = result.body; }\n\nreturn [{\n  json: {\n    pipeline_status: 'COMPLETED_SUCCESSFULLY',\n    orchestrated_at: new Date().toISOString(),\n    tender: result.tender,\n    prospect_profile: result.prospect_profile,\n    rag_matching: result.rag_matching,\n    proposal_draft: result.proposal_draft,\n    pptx_deliverable: result.pptx_deliverable,\n    dashboard_status: 'READY_FOR_COMMERCIAL_REVIEW'\n  }\n}];"
       },
       "type": "n8n-nodes-base.code",
       "typeVersion": 2,

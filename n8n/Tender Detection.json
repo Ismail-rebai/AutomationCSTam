@@ -216,7 +216,7 @@
         },
         "sendBody": true,
         "specifyBody": "json",
-        "jsonBody": "={{ JSON.stringify($json) }}",
+        "jsonBody": "={\n  \"id\": {{ JSON.stringify($json.id || \"AO-001\") }},\n  \"buyer\": {{ JSON.stringify($json.buyer || \"Organisme Public\") }},\n  \"country\": {{ JSON.stringify($json.country || \"Tunisia\") }},\n  \"description\": {{ JSON.stringify($json.description || \"Système d'information et transformation numérique\") }},\n  \"source\": {{ JSON.stringify($json.source || \"appeloffres.com\") }},\n  \"url\": {{ JSON.stringify($json.url || \"\") }},\n  \"published_date\": {{ JSON.stringify($json.published_date || \"\") }},\n  \"deadline\": {{ JSON.stringify($json.deadline || \"\") }}\n}",
         "options": {}
       },
       "type": "n8n-nodes-base.httpRequest",
