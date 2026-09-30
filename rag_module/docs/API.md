@@ -132,6 +132,58 @@ curl -X POST http://localhost:8001/match-tender \
 }
 ```
 
+### POST /proposals/generate-deck
+
+Generates an executive 8-slide PowerPoint (.pptx) presentation deck with:
+- Suggested technical architecture & tech stack
+- Step-by-step 5-phase realization plan
+- Total duration in weeks & milestone schedule
+- Role-based price breakdown in Tunisian Dinars (TND) with 12% contingency buffer
+
+```bash
+curl -X POST http://localhost:8000/proposals/generate-deck \
+  -H "Content-Type: application/json" \
+  -d '{
+    "tender_id": "TENDER-003",
+    "title": "Migration du système bancaire vers microservices",
+    "client": "Banque Centrale de Tunisie",
+    "requirements": [
+      {"req_id": "R1", "text": "Microservices et Java Spring Boot", "tech_keywords": ["java", "spring boot"]}
+    ],
+    "staffing_matches": [
+      {"cv_id": "CV-003", "name": "Mohamed Kacem", "title": "Java/Spring Architect", "skills_matched": ["java", "spring boot"]}
+    ],
+    "fit_score": 0.95
+  }'
+```
+
+**Response:**
+
+```json
+{
+  "tender_id": "TENDER-003",
+  "title": "Migration du système bancaire vers microservices",
+  "client_name": "Banque Centrale de Tunisie",
+  "file_path": "results/proposals/TENDER-003_OliveSoft_Proposal.pptx",
+  "file_name": "TENDER-003_OliveSoft_Proposal.pptx",
+  "download_url": "/proposals/download/TENDER-003",
+  "total_price_tnd": 77224.0,
+  "total_duration_weeks": 14,
+  "fit_score": 0.95,
+  "phases_count": 5,
+  "slides_count": 8,
+  "proposal_data": { ... }
+}
+```
+
+### GET /proposals/download/{tender_id}
+
+Downloads the compiled PowerPoint (.pptx) file directly.
+
+```bash
+curl -O http://localhost:8000/proposals/download/TENDER-003
+```
+
 ## Ingest API (default: http://localhost:8002)
 
 ### GET /health

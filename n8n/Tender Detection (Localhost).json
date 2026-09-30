@@ -79,7 +79,8 @@
         0
       ],
       "id": "60b9142e-b7d7-43d1-b6e5-5dc232a64cd3",
-      "name": "HTTP Request1"
+      "name": "HTTP Request1",
+      "onError": "continueRegularOutput"
     },
     {
       "parameters": {
@@ -110,7 +111,7 @@
     },
     {
       "parameters": {
-        "jsCode": "// 1. Extract Groq response\nconst groqContent = $input.first()?.json?.choices?.[0]?.message?.content || '{}';\n\n// 2. Parse returned relevant indices\nlet indices = [];\ntry {\n  const parsed = JSON.parse(groqContent);\n  indices = Array.isArray(parsed.relevant) ? parsed.relevant : [];\n} catch(e) {\n  const matches = groqContent.match(/\\d+/g) || [];\n  indices = matches.map(Number);\n}\n\n// 3. Directly retrieve the full merged list of tenders from the Aggregate node\nconst tenders = $('Aggregate').first()?.json?.data || [];\n\n// 4. Retrieve static cache for new tender tracking (safe for test & production)\nconst staticData = (typeof $getWorkflowStaticData === 'function') ? $getWorkflowStaticData('global') : {};\nstaticData.seenIds = staticData.seenIds || [];\nconst seenSet = new Set(staticData.seenIds);\n\n// 5. Map matching indices to full tender objects and tag new ones\nconst relevantTenders = indices\n  .filter(i => Number.isInteger(i) && i >= 1 && i <= tenders.length)\n  .map(i => {\n    const tender = tenders[i - 1];\n    const isNew = !seenSet.has(tender.id);\n    if (isNew) seenSet.add(tender.id);\n    return {\n      json: {\n        ...tender,\n        is_new: isNew,\n        llm_classified: true,\n        relevance_source: 'groq'\n      }\n    };\n  });\n\n// Maintain cache size to prevent memory growth (keep last 3000 IDs)\nstaticData.seenIds = Array.from(seenSet).slice(-3000);\n\n// 6. Sort all results by publication date descending (latest tenders ALWAYS first)\nrelevantTenders.sort((a, b) => {\n  const dateA = a.json.published_date || '';\n  const dateB = b.json.published_date || '';\n  return dateB.localeCompare(dateA);\n});\n\nconsole.log(`Successfully classified ${relevantTenders.length} relevant tenders out of ${tenders.length} total.`);\n\nreturn relevantTenders;"
+        "jsCode": "// 1. Extract Groq response\nconst groqContent = $input.first()?.json?.choices?.[0]?.message?.content || '{}';\n\n// 2. Parse returned relevant indices\nlet indices = [];\ntry {\n  const parsed = JSON.parse(groqContent);\n  indices = Array.isArray(parsed.relevant) ? parsed.relevant : [];\n} catch(e) {\n  const matches = groqContent.match(/\\d+/g) || [];\n  indices = matches.map(Number);\n}\n\n// 3. Directly retrieve the full merged list of tenders from the Aggregate node\nconst tenders = $('Aggregate').first()?.json?.data || [];\n\n// Resilience Fallback: If Groq classification returned no indices (offline or quota), fallback to all lexically filtered tenders\nif ((!indices || indices.length === 0) && tenders.length > 0) {\n  indices = tenders.map((_, idx) => idx + 1);\n}\n\n// 4. Retrieve static cache for new tender tracking (safe for test & production)\nconst staticData = (typeof $getWorkflowStaticData === 'function') ? $getWorkflowStaticData('global') : {};\nstaticData.seenIds = staticData.seenIds || [];\nconst seenSet = new Set(staticData.seenIds);\n\n// 5. Map matching indices to full tender objects and tag new ones\nconst relevantTenders = indices\n  .filter(i => Number.isInteger(i) && i >= 1 && i <= tenders.length)\n  .map(i => {\n    const tender = tenders[i - 1];\n    const isNew = !seenSet.has(tender.id);\n    if (isNew) seenSet.add(tender.id);\n    return {\n      json: {\n        ...tender,\n        is_new: isNew,\n        llm_classified: true,\n        relevance_source: 'groq'\n      }\n    };\n  });\n\n// Maintain cache size to prevent memory growth (keep last 3000 IDs)\nstaticData.seenIds = Array.from(seenSet).slice(-3000);\n\n// 6. Sort all results by publication date descending (latest tenders ALWAYS first)\nrelevantTenders.sort((a, b) => {\n  const dateA = a.json.published_date || '';\n  const dateB = b.json.published_date || '';\n  return dateB.localeCompare(dateA);\n});\n\nconsole.log(`Successfully classified ${relevantTenders.length} relevant tenders out of ${tenders.length} total.`);\n\nreturn relevantTenders;"
       },
       "type": "n8n-nodes-base.code",
       "typeVersion": 2,
@@ -146,11 +147,12 @@
         16
       ],
       "id": "e4a985a1-5382-4592-997f-5dac09724d21",
-      "name": "HTTP Request2"
+      "name": "HTTP Request2",
+      "onError": "continueRegularOutput"
     },
     {
       "parameters": {
-        "jsCode": "const notices = $input.first()?.json?.notices || [];\n\nreturn notices.map(notice => {\n  const title = notice['notice-title']?.eng \n    || Object.values(notice['notice-title'] || {})[0] \n    || 'No title';\n  \n  const buyerName = notice['buyer-name']\n    ? Object.values(notice['buyer-name'])[0]?.[0] || 'Unknown'\n    : 'Unknown';\n\n  const country = notice['buyer-country']?.[0] || 'Unknown';\n  const pubNumber = notice['publication-number'] || '';\n  const pubDate = notice['publication-date']?.split('+')[0] || '';\n  const cpvCodes = (notice['classification-cpv'] || []).join(', ');\n  const url = `https://ted.europa.eu/en/notice/-/detail/${pubNumber}`;\n\n  return {\n    json: {\n      id: `TED-${pubNumber}`,\n      source: 'ted.europa.eu',\n      domain: 'IT / Software Services',\n      description: title,\n      reference: pubNumber,\n      country: country,\n      published_date: pubDate,\n      deadline: '',\n      url: url,\n      detected_at: new Date().toISOString(),\n      status: 'active',\n      cpv_codes: cpvCodes,\n      buyer: buyerName\n    }\n  };\n});"
+        "jsCode": "const notices = $input.first()?.json?.notices || [];\nif (!Array.isArray(notices) || notices.length === 0) return [];\nconst notices = $input.first()?.json?.notices || [];\n\nreturn notices.map(notice => {\n  const title = notice['notice-title']?.eng \n    || Object.values(notice['notice-title'] || {})[0] \n    || 'No title';\n  \n  const buyerName = notice['buyer-name']\n    ? Object.values(notice['buyer-name'])[0]?.[0] || 'Unknown'\n    : 'Unknown';\n\n  const country = notice['buyer-country']?.[0] || 'Unknown';\n  const pubNumber = notice['publication-number'] || '';\n  const pubDate = notice['publication-date']?.split('+')[0] || '';\n  const cpvCodes = (notice['classification-cpv'] || []).join(', ');\n  const url = `https://ted.europa.eu/en/notice/-/detail/${pubNumber}`;\n\n  return {\n    json: {\n      id: `TED-${pubNumber}`,\n      source: 'ted.europa.eu',\n      domain: 'IT / Software Services',\n      description: title,\n      reference: pubNumber,\n      country: country,\n      published_date: pubDate,\n      deadline: '',\n      url: url,\n      detected_at: new Date().toISOString(),\n      status: 'active',\n      cpv_codes: cpvCodes,\n      buyer: buyerName\n    }\n  };\n});"
       },
       "type": "n8n-nodes-base.code",
       "typeVersion": 2,
@@ -175,7 +177,7 @@
     {
       "parameters": {
         "method": "POST",
-        "url": "http://host.docker.internal:8000/match-tender",
+        "url": "http://localhost:8000/match-tender",
         "sendHeaders": true,
         "headerParameters": {
           "parameters": [
@@ -356,6 +358,24 @@
       ],
       "id": "0a1b2c3d-4e5f-6a7b-8c9d-e0f1a2b3c4d5",
       "name": "Format Commercial Proposal Presentation Deck"
+    },
+    {
+      "parameters": {
+        "method": "POST",
+        "url": "http://localhost:8000/proposals/generate-deck",
+        "sendBody": true,
+        "specifyBody": "json",
+        "jsonBody": "={\n  \"tender_id\": \"{{ $json.tender_id || \"TENDER-001\" }}\",\n  \"title\": \"{{ $json.tender_title || \"Solution OliveSoft\" }}\",\n  \"client\": \"{{ $json.client_name || \"Client\" }}\",\n  \"requirements\": {{ JSON.stringify($json.requirements || []) }},\n  \"staffing_matches\": {{ JSON.stringify($json.staffing_team || []) }},\n  \"fit_score\": {{ $json.fit_score || 1.0 }}\n}",
+        "options": {}
+      },
+      "id": "e1f2a3b4-c5d6-7e8f-9a0b-1c2d3e4f5a6b",
+      "name": "Generate PowerPoint Deck (.pptx)",
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.2,
+      "position": [
+        2540,
+        -100
+      ]
     }
   ],
   "pinData": {},
@@ -542,6 +562,17 @@
         [
           {
             "node": "Format Commercial Proposal Presentation Deck",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Format Commercial Proposal Presentation Deck": {
+      "main": [
+        [
+          {
+            "node": "Generate PowerPoint Deck (.pptx)",
             "type": "main",
             "index": 0
           }

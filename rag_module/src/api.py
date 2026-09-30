@@ -10,14 +10,18 @@ Endpoints:
 import logging
 import os
 from contextlib import asynccontextmanager
+from pathlib import Path
 from typing import Any, Dict, List, Optional
 
 from fastapi import FastAPI, HTTPException
+from fastapi.responses import FileResponse
 from pydantic import BaseModel, Field
 
 from .documents import KBRecord, load_all_records
 from .embeddings import get_backend
 from .hybrid_index import HybridIndex, SearchResult
+from .proposal_generator import ProposalDeckData, generate_proposal_deck_data
+from .pptx_builder import build_proposal_presentation
 
 logger = logging.getLogger(__name__)
 
@@ -385,6 +389,96 @@ async def match_tender(req: MatchTenderRequest):
         not_covered_count=not_covered_count,
         total_requirements=total,
         staffing_suggestions=staffing,
+    )
+
+
+# --- Proposal PowerPoint Presentation Generation ---
+
+PROPOSALS_DIR = Path(os.getenv("RESULTS_DIR", "results")) / "proposals"
+
+
+class GenerateDeckRequest(BaseModel):
+    tender_id: str
+    title: str
+    client: Optional[str] = "Organisme Contractant"
+    requirements: Optional[List[Dict[str, Any]]] = Field(default_factory=list)
+    staffing_matches: Optional[List[Dict[str, Any]]] = Field(default_factory=list)
+    fit_score: Optional[float] = 1.0
+
+
+class GenerateDeckResponse(BaseModel):
+    tender_id: str
+    title: str
+    client_name: str
+    file_path: str
+    file_name: str
+    download_url: str
+    total_price_tnd: float
+    total_duration_weeks: int
+    fit_score: float
+    phases_count: int
+    slides_count: int = 8
+    proposal_data: ProposalDeckData
+
+
+@app.post("/proposals/generate-deck", response_model=GenerateDeckResponse)
+def generate_proposal_deck(req: GenerateDeckRequest) -> GenerateDeckResponse:
+    """
+    Generate an executive 8-slide PowerPoint (.pptx) presentation for a tender.
+    Synthesizes technical solution, step-by-step 5-phase realization,
+    timeline duration, and role-based TND pricing breakdown.
+    """
+    PROPOSALS_DIR.mkdir(parents=True, exist_ok=True)
+    clean_id = req.tender_id.replace("/", "_").replace("\\", "_").replace(" ", "_").strip()
+    file_name = f"{clean_id}_OliveSoft_Proposal.pptx"
+    output_path = PROPOSALS_DIR / file_name
+
+    # Run multi-agent proposal synthesis
+    proposal_data = generate_proposal_deck_data(
+        tender_id=req.tender_id,
+        title=req.title,
+        client=req.client,
+        requirements=req.requirements,
+        staffing_matches=req.staffing_matches,
+        fit_score=req.fit_score or 1.0,
+    )
+
+    # Compile .pptx file
+    build_proposal_presentation(proposal_data, str(output_path))
+
+    return GenerateDeckResponse(
+        tender_id=req.tender_id,
+        title=req.title,
+        client_name=proposal_data.client_name,
+        file_path=str(output_path),
+        file_name=file_name,
+        download_url=f"/proposals/download/{clean_id}",
+        total_price_tnd=proposal_data.pricing.total_price_tnd,
+        total_duration_weeks=proposal_data.total_duration_weeks,
+        fit_score=proposal_data.fit_score,
+        phases_count=len(proposal_data.phases),
+        slides_count=8,
+        proposal_data=proposal_data,
+    )
+
+
+@app.get("/proposals/download/{tender_id}")
+def download_proposal_deck(tender_id: str):
+    """Download the generated PowerPoint (.pptx) file for a given tender."""
+    clean_id = tender_id.replace("/", "_").replace("\\", "_").replace(" ", "_").strip()
+    file_name = f"{clean_id}_OliveSoft_Proposal.pptx"
+    file_path = PROPOSALS_DIR / file_name
+
+    if not file_path.exists():
+        raise HTTPException(
+            status_code=404,
+            detail=f"Proposal presentation for tender '{tender_id}' not found. Generate it first via POST /proposals/generate-deck",
+        )
+
+    return FileResponse(
+        path=str(file_path),
+        filename=file_name,
+        media_type="application/vnd.openxmlformats-officedocument.presentationml.presentation",
     )
 
 
