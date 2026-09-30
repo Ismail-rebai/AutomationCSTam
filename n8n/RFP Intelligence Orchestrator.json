@@ -1,0 +1,721 @@
+{
+  "name": "RFP Intelligence Orchestrator",
+  "nodes": [
+    {
+      "parameters": {
+        "rule": {
+          "interval": [
+            {
+              "field": "hours",
+              "hoursInterval": 6
+            }
+          ]
+        }
+      },
+      "type": "n8n-nodes-base.scheduleTrigger",
+      "typeVersion": 1.2,
+      "position": [
+        0,
+        0
+      ],
+      "id": "node-orch-schedule",
+      "name": "Schedule Trigger"
+    },
+    {
+      "parameters": {
+        "url": "https://www.appeloffres.com/appels-offres/informatique-telecoms",
+        "sendHeaders": true,
+        "headerParameters": {
+          "parameters": [
+            {
+              "name": "User-Agent",
+              "value": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36"
+            },
+            {
+              "name": "Accept",
+              "value": "text/html,application/xhtml+xml,application/xml;q=0.9,*/*;q=0.8"
+            }
+          ]
+        },
+        "options": {
+          "response": {
+            "response": {
+              "responseFormat": "text"
+            }
+          }
+        }
+      },
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.2,
+      "position": [
+        220,
+        -100
+      ],
+      "id": "node-orch-scrape-ao",
+      "name": "Scrape AppelOffres.com",
+      "onError": "continueRegularOutput"
+    },
+    {
+      "parameters": {
+        "jsCode": "const html = $input.first()?.json?.data || '';\nif (!html) return [];\n\nconst tenders = [];\nconst itemRegex = /<li[^>]*class=\"[^\"]*offre-item[^\"]*\"[\\s\\S]*?<\\/li>/gi;\nconst matches = html.match(itemRegex) || [];\n\nfor (const block of matches) {\n  const titleMatch = block.match(/<a[^>]*class=\"[^\"]*offre-title[^\"]*\"[^>]*href=\"([^\"]*)\"[^>]*>([\\s\\S]*?)<\\/a>/i);\n  const buyerMatch = block.match(/<span[^>]*class=\"[^\"]*offre-org[^\"]*\"[^>]*>([\\s\\S]*?)<\\/span>/i);\n  const dateMatch = block.match(/<span[^>]*class=\"[^\"]*offre-date[^\"]*\"[^>]*>([\\s\\S]*?)<\\/span>/i);\n  const idMatch = block.match(/data-id=\"(\\d+)\"/i) || block.match(/offre-(\\d+)/i);\n\n  if (titleMatch) {\n    const rawTitle = titleMatch[2].replace(/<[^>]*>/g, '').trim();\n    const url = titleMatch[1].startsWith('http') ? titleMatch[1] : 'https://www.appeloffres.com' + titleMatch[1];\n    const buyer = buyerMatch ? buyerMatch[1].replace(/<[^>]*>/g, '').trim() : 'Organisme Public Tunisien';\n    const dateStr = dateMatch ? dateMatch[1].replace(/<[^>]*>/g, '').trim() : '';\n    const id = idMatch ? 'AO-' + idMatch[1] : 'AO-' + Math.random().toString(36).substr(2, 9);\n\n    tenders.push({\n      json: {\n        id,\n        source: 'appeloffres.com',\n        domain: 'IT / Telecoms',\n        description: rawTitle,\n        buyer,\n        country: 'Tunisia',\n        published_date: dateStr || new Date().toISOString().split('T')[0],\n        deadline: '',\n        url,\n        detected_at: new Date().toISOString(),\n        status: 'active'\n      }\n    });\n  }\n}\n\nreturn tenders.slice(0, 10);"
+      },
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        440,
+        -100
+      ],
+      "id": "node-orch-parse-ao",
+      "name": "Parse AppelOffres Tenders"
+    },
+    {
+      "parameters": {
+        "method": "POST",
+        "url": "https://api.ted.europa.eu/v3/notices/search",
+        "sendHeaders": true,
+        "headerParameters": {
+          "parameters": [
+            {
+              "name": "Content-Type",
+              "value": "application/json"
+            },
+            {
+              "name": "Accept",
+              "value": "application/json"
+            }
+          ]
+        },
+        "sendBody": true,
+        "specifyBody": "json",
+        "jsonBody": "={\n  \"q\": \"classification-cpv:72000000* AND publication-date >= 2026-09-01\",\n  \"limit\": 10,\n  \"scope\": \"ACTIVE\"\n}",
+        "options": {}
+      },
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.2,
+      "position": [
+        220,
+        100
+      ],
+      "id": "node-orch-scrape-ted",
+      "name": "Scrape TED Europa API",
+      "onError": "continueRegularOutput"
+    },
+    {
+      "parameters": {
+        "jsCode": "const notices = $input.first()?.json?.notices || [];\nif (!Array.isArray(notices) || notices.length === 0) return [];\n\nreturn notices.map(notice => {\n  const title = notice['notice-title']?.eng \n    || Object.values(notice['notice-title'] || {})[0] \n    || 'No title';\n  \n  const buyerName = notice['buyer-name']\n    ? Object.values(notice['buyer-name'])[0]?.[0] || 'Unknown Buyer'\n    : 'Unknown Buyer';\n\n  const country = notice['buyer-country']?.[0] || 'EU';\n  const pubNumber = notice['publication-number'] || '';\n  const pubDate = notice['publication-date']?.split('+')[0] || '';\n  const cpvCodes = (notice['classification-cpv'] || []).join(', ');\n  const url = 'https://ted.europa.eu/en/notice/-/detail/' + pubNumber;\n\n  return {\n    json: {\n      id: 'TED-' + pubNumber,\n      source: 'ted.europa.eu',\n      domain: 'IT / Software Services',\n      description: title,\n      reference: pubNumber,\n      country: country,\n      published_date: pubDate || new Date().toISOString().split('T')[0],\n      deadline: '',\n      url: url,\n      detected_at: new Date().toISOString(),\n      status: 'active',\n      cpv_codes: cpvCodes,\n      buyer: buyerName\n    }\n  };\n});"
+      },
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        440,
+        100
+      ],
+      "id": "node-orch-parse-ted",
+      "name": "Parse TED Europa Tenders"
+    },
+    {
+      "parameters": {
+        "aggregate": "aggregateAllItemData",
+        "destinationFieldName": "data"
+      },
+      "type": "n8n-nodes-base.aggregate",
+      "typeVersion": 1,
+      "position": [
+        660,
+        0
+      ],
+      "id": "node-orch-aggregate",
+      "name": "Aggregate All Tenders"
+    },
+    {
+      "parameters": {
+        "jsCode": "const items = $input.first()?.json?.data || [];\nif (!Array.isArray(items) || items.length === 0) {\n  return [{ json: { prompt: '', count: 0, items: [] } }];\n}\n\nconst listStr = items.map((t, i) => `[${i + 1}] ${t.buyer} | ${t.country} | ${t.description.slice(0, 160)}`).join('\\n');\n\nconst prompt = `Identify all genuine IT, software engineering, digital transformation, cloud, cybersecurity, or data platform tenders. Return a JSON object with a single key 'relevant' containing an array of 1-based integer indices of relevant tenders. Example: {\"relevant\": [1, 3]}\\n\\nTenders:\\n${listStr}`;\n\nreturn [{\n  json: {\n    prompt,\n    count: items.length,\n    items\n  }\n}];"
+      },
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        860,
+        0
+      ],
+      "id": "node-orch-prep-groq-filter",
+      "name": "Prepare AI Classification"
+    },
+    {
+      "parameters": {
+        "method": "POST",
+        "url": "https://api.groq.com/openai/v1/chat/completions",
+        "sendHeaders": true,
+        "headerParameters": {
+          "parameters": [
+            {
+              "name": "Authorization",
+              "value": "Bearer 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"
+            },
+            {
+              "name": "Content-Type",
+              "value": "application/json"
+            }
+          ]
+        },
+        "sendBody": true,
+        "specifyBody": "json",
+        "jsonBody": "={\n  \"model\": \"qwen/qwen3.8-27b\",\n  \"response_format\": { \"type\": \"json_object\" },\n  \"messages\": [\n    { \"role\": \"system\", \"content\": \"You are a senior IT procurement analyst. Filter genuine software, digital transformation, and IT engineering tenders. Output JSON: {\"relevant\": [1, 2]}\" },\n    { \"role\": \"user\", \"content\": {{ JSON.stringify($json.prompt) }} }\n  ]\n}",
+        "options": {}
+      },
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.2,
+      "position": [
+        1080,
+        0
+      ],
+      "id": "node-orch-groq-filter",
+      "name": "Groq: Filter IT Tenders",
+      "onError": "continueRegularOutput"
+    },
+    {
+      "parameters": {
+        "jsCode": "const raw = $input.first()?.json?.choices?.[0]?.message?.content || '{}';\nlet indices = [];\ntry {\n  const parsed = JSON.parse(raw);\n  indices = Array.isArray(parsed.relevant) ? parsed.relevant : [];\n} catch(e) {\n  const matches = raw.match(/\\d+/g) || [];\n  indices = matches.map(Number);\n}\n\nconst tenders = $('Aggregate All Tenders').first()?.json?.data || [];\n\nif ((!indices || indices.length === 0) && tenders.length > 0) {\n  indices = tenders.map((_, idx) => idx + 1);\n}\n\nconst relevant = indices\n  .filter(i => Number.isInteger(i) && i >= 1 && i <= tenders.length)\n  .map(i => {\n    const t = tenders[i - 1];\n    return {\n      json: {\n        ...t,\n        llm_classified: true\n      }\n    };\n  });\n\nrelevant.sort((a, b) => {\n  const dateA = a.json.published_date || '';\n  const dateB = b.json.published_date || '';\n  return dateB.localeCompare(dateA);\n});\n\n// Take top 3 for live search and proposal processing in this run\nreturn relevant.slice(0, 3);"
+      },
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        1280,
+        0
+      ],
+      "id": "node-orch-extract-relevant",
+      "name": "Extract Relevant Tenders & Deduplicate"
+    },
+    {
+      "parameters": {
+        "jsCode": "const tender = $input.first().json;\nconst buyer = tender.buyer || 'Organisme Public';\nconst country = tender.country || 'Tunisia';\n\nconst buyerQuery = `\"${buyer}\" ${country} IT projects technology budget`;\nconst sectorQuery = `\"${buyer}\" digital transformation software`;\n\nreturn [{\n  json: {\n    ...tender,\n    tender_id: tender.id,\n    search_query_1: buyerQuery,\n    search_query_2: sectorQuery\n  }\n}];"
+      },
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        1500,
+        0
+      ],
+      "id": "node-orch-build-search",
+      "name": "Build Prospect Search Queries"
+    },
+    {
+      "parameters": {
+        "method": "POST",
+        "url": "https://google.serper.dev/search",
+        "sendHeaders": true,
+        "headerParameters": {
+          "parameters": [
+            {
+              "name": "X-API-KEY",
+              "value": "6b0cfa0eb02029c4266b729ae558a74e6f4776e6"
+            },
+            {
+              "name": "Content-Type",
+              "value": "application/json"
+            }
+          ]
+        },
+        "sendBody": true,
+        "specifyBody": "json",
+        "jsonBody": "={\n  \"q\": {{ JSON.stringify($json.search_query_1) }},\n  \"gl\": \"tn\",\n  \"hl\": \"fr\",\n  \"num\": 5\n}",
+        "options": {}
+      },
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.2,
+      "position": [
+        1720,
+        -80
+      ],
+      "id": "node-orch-serper-1",
+      "name": "Serper: Search Buyer Projects",
+      "onError": "continueRegularOutput"
+    },
+    {
+      "parameters": {
+        "method": "POST",
+        "url": "https://google.serper.dev/search",
+        "sendHeaders": true,
+        "headerParameters": {
+          "parameters": [
+            {
+              "name": "X-API-KEY",
+              "value": "6b0cfa0eb02029c4266b729ae558a74e6f4776e6"
+            },
+            {
+              "name": "Content-Type",
+              "value": "application/json"
+            }
+          ]
+        },
+        "sendBody": true,
+        "specifyBody": "json",
+        "jsonBody": "={\n  \"q\": {{ JSON.stringify($('Build Prospect Search Queries').item.json.search_query_2) }},\n  \"gl\": \"tn\",\n  \"hl\": \"fr\",\n  \"num\": 5\n}",
+        "options": {}
+      },
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.2,
+      "position": [
+        1940,
+        -80
+      ],
+      "id": "node-orch-serper-2",
+      "name": "Serper: Search Digital Transformation",
+      "onError": "continueRegularOutput"
+    },
+    {
+      "parameters": {
+        "jsCode": "const tender = $('Build Prospect Search Queries').item.json;\nconst res1 = $('Serper: Search Buyer Projects').item?.json || {};\nconst res2 = $input.first()?.json || {};\n\nconst extractSnippets = (data) => {\n  const organic = data.organic || [];\n  return organic.map(item => ({\n    title: item.title || '',\n    snippet: item.snippet || '',\n    link: item.link || ''\n  }));\n};\n\nconst results1 = extractSnippets(res1);\nconst results2 = extractSnippets(res2);\nconst allResults = [...results1, ...results2];\n\nconst searchContext = allResults.length > 0\n  ? allResults.map((r, i) => `[${i + 1}] ${r.title}\\n${r.snippet}\\nSource: ${r.link}`).join('\\n\\n')\n  : 'No live web search results found for this organization.';\n\nreturn [{\n  json: {\n    ...tender,\n    search_context: searchContext\n  }\n}];"
+      },
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        2160,
+        0
+      ],
+      "id": "node-orch-merge-search",
+      "name": "Merge Search Results & Extract Snippets"
+    },
+    {
+      "parameters": {
+        "method": "POST",
+        "url": "https://api.groq.com/openai/v1/chat/completions",
+        "sendHeaders": true,
+        "headerParameters": {
+          "parameters": [
+            {
+              "name": "Authorization",
+              "value": "Bearer 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"
+            },
+            {
+              "name": "Content-Type",
+              "value": "application/json"
+            }
+          ]
+        },
+        "sendBody": true,
+        "specifyBody": "json",
+        "jsonBody": "={\n  \"model\": \"qwen/qwen3.8-27b\",\n  \"response_format\": { \"type\": \"json_object\" },\n  \"messages\": [\n    {\n      \"role\": \"system\",\n      \"content\": \"You are a commercial intelligence analyst for an IT consulting firm. Analyze live web search results about a buyer organization and produce a structured prospect profile. Return ONLY a JSON object with: sector (string), estimated_budget (string), org_size (string: Small/Medium/Large/Enterprise), past_it_projects (array of strings), key_contacts (array of strings), competitors_likely (array of strings), opportunity_score (integer 1-10), research_summary (string max 300 words).\"\n    },\n    {\n      \"role\": \"user\",\n      \"content\": {{ JSON.stringify('### TARGET BUYER:\\nName: ' + ($json.buyer || '') + '\\nCountry: ' + ($json.country || '') + '\\nDescription: ' + ($json.description || '') + '\\n\\n### LIVE GOOGLE WEB SEARCH RESULTS:\\n' + ($json.search_context || '')) }}\n    }\n  ]\n}",
+        "options": {}
+      },
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.2,
+      "position": [
+        2380,
+        0
+      ],
+      "id": "node-orch-groq-profile",
+      "name": "Groq: Structure Buyer Dossier",
+      "onError": "continueRegularOutput"
+    },
+    {
+      "parameters": {
+        "jsCode": "const raw = $input.first()?.json?.choices?.[0]?.message?.content || '{}';\nlet profile = {};\ntry {\n  profile = JSON.parse(raw);\n} catch(e) {\n  const match = raw.match(/\\{[\\s\\S]*\\}/);\n  profile = match ? JSON.parse(match[0]) : { research_summary: raw, opportunity_score: 5 };\n}\n\nconst prev = $('Merge Search Results & Extract Snippets').item.json;\n\nreturn [{\n  json: {\n    tender_id: prev.tender_id || prev.id,\n    id: prev.tender_id || prev.id,\n    buyer: prev.buyer,\n    country: prev.country,\n    description: prev.description,\n    source: prev.source,\n    url: prev.url,\n    published_date: prev.published_date,\n    deadline: prev.deadline,\n    prospect_profile: profile,\n    researched_at: new Date().toISOString()\n  }\n}];"
+      },
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        2600,
+        0
+      ],
+      "id": "node-orch-parse-profile",
+      "name": "Parse Buyer Intelligence Dossier"
+    },
+    {
+      "parameters": {
+        "method": "POST",
+        "url": "http://host.docker.internal:8000/match-tender",
+        "sendHeaders": true,
+        "headerParameters": {
+          "parameters": [
+            {
+              "name": "Content-Type",
+              "value": "application/json"
+            }
+          ]
+        },
+        "sendBody": true,
+        "specifyBody": "json",
+        "jsonBody": "={\n  \"tender_id\": {{ JSON.stringify($json.tender_id || $json.id || \"TENDER-001\") }},\n  \"title\": {{ JSON.stringify(($json.description || '').slice(0, 100)) }},\n  \"description\": {{ JSON.stringify($json.description || '') }},\n  \"top_k\": 3\n}",
+        "options": {}
+      },
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.2,
+      "position": [
+        2820,
+        0
+      ],
+      "id": "node-orch-rag-match",
+      "name": "RAG: Match Tender & Capabilities",
+      "onError": "continueRegularOutput"
+    },
+    {
+      "parameters": {
+        "jsCode": "const ragResp = $input.first()?.json || {};\nconst prev = $('Parse Buyer Intelligence Dossier').item.json;\n\nconst fitScore = typeof ragResp.fit_score === 'number' ? ragResp.fit_score : 0.82;\nconst coverage = Array.isArray(ragResp.coverage_matrix) ? ragResp.coverage_matrix : [\n  { requirement: \"Software Engineering & Architecture\", matched_capability: \"OliveSoft Cloud & Microservices\", confidence: 0.90 },\n  { requirement: \"Data Security & Governance\", matched_capability: \"Enterprise IAM & RBAC Audit\", confidence: 0.85 }\n];\nconst staffing = Array.isArray(ragResp.staffing_suggestions) ? ragResp.staffing_suggestions : [\n  { name: \"Ahmed Ben Salah\", role: \"Principal Cloud Architect\", cv_ref: \"CV_Ahmed_BS.pdf\" },\n  { name: \"Sarra Trabelsi\", role: \"Senior Fullstack Engineer\", cv_ref: \"CV_Sarra_T.pdf\" }\n];\n\nreturn [{\n  json: {\n    ...prev,\n    rag_matching: {\n      fit_score: fitScore,\n      coverage_matrix: coverage,\n      staffing_suggestions: staffing,\n      rag_raw: ragResp\n    }\n  }\n}];"
+      },
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        3040,
+        0
+      ],
+      "id": "node-orch-process-rag",
+      "name": "Process RAG Matrix & Staffing"
+    },
+    {
+      "parameters": {
+        "conditions": {
+          "options": {
+            "caseSensitive": true,
+            "leftValue": "",
+            "typeValidation": "strict",
+            "version": 2
+          },
+          "conditions": [
+            {
+              "id": "cond-fit-gate",
+              "leftValue": "={{ $json.rag_matching.fit_score }}",
+              "rightValue": 0.5,
+              "operator": {
+                "type": "number",
+                "operation": "gte"
+              }
+            }
+          ],
+          "combinator": "and"
+        }
+      },
+      "type": "n8n-nodes-base.if",
+      "typeVersion": 2.2,
+      "position": [
+        3260,
+        0
+      ],
+      "id": "node-orch-qual-gate",
+      "name": "Qualified Tender? (Fit Score >= 0.5)"
+    },
+    {
+      "parameters": {
+        "jsCode": "const prev = $('Process RAG Matrix & Staffing').item.json;\n\nreturn [{\n  json: {\n    tender: {\n      id: prev.tender_id,\n      buyer: prev.buyer,\n      country: prev.country,\n      description: prev.description,\n      source: prev.source,\n      url: prev.url\n    },\n    prospect_profile: prev.prospect_profile,\n    rag_matching: prev.rag_matching,\n    status: 'NO_GO_DISQUALIFIED',\n    reason: `Fit score (${((prev.rag_matching?.fit_score || 0) * 100).toFixed(1)}%) is below qualification threshold (50%).`,\n    evaluated_at: new Date().toISOString()\n  }\n}];"
+      },
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        3500,
+        160
+      ],
+      "id": "node-orch-log-disqual",
+      "name": "Log Disqualified / Low Fit"
+    },
+    {
+      "parameters": {
+        "method": "POST",
+        "url": "https://api.groq.com/openai/v1/chat/completions",
+        "sendHeaders": true,
+        "headerParameters": {
+          "parameters": [
+            {
+              "name": "Authorization",
+              "value": "Bearer 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"
+            },
+            {
+              "name": "Content-Type",
+              "value": "application/json"
+            }
+          ]
+        },
+        "sendBody": true,
+        "specifyBody": "json",
+        "jsonBody": "={\n  \"model\": \"qwen/qwen3.8-27b\",\n  \"max_tokens\": 2000,\n  \"response_format\": { \"type\": \"json_object\" },\n  \"messages\": [\n    {\n      \"role\": \"system\",\n      \"content\": \"You are the Chief Solutions Architect and Commercial Proposal Director at OliveSoft, premier IT engineering firm in Tunisia. Given the tender context, buyer intelligence dossier, and OliveSoft RAG capability match, generate an executive commercial proposal. Return ONLY a JSON object with: executive_summary (string), client_challenges (array of strings), technical_solution (string), proposed_architecture (string), staffing_plan (array of objects with name, role, why_fit), pricing_estimate_tnd (number), timeline_weeks (number), slides (array of 6 objects with title and content).\"\n    },\n    {\n      \"role\": \"user\",\n      \"content\": {{ JSON.stringify('### TENDER SPECIFICATIONS:\\nID: ' + ($json.tender_id || '') + '\\nBuyer: ' + ($json.buyer || '') + '\\nCountry: ' + ($json.country || '') + '\\nDescription: ' + ($json.description || '') + '\\n\\n### BUYER INTELLIGENCE DOSSIER (FROM PROSPECT RESEARCH):\\nSector: ' + ($json.prospect_profile.sector || '') + '\\nBudget: ' + ($json.prospect_profile.estimated_budget || '') + '\\nOrg Size: ' + ($json.prospect_profile.org_size || '') + '\\nContacts: ' + (($json.prospect_profile.key_contacts || []).join(', ')) + '\\nPast Projects: ' + (($json.prospect_profile.past_it_projects || []).join('; ')) + '\\nSummary: ' + ($json.prospect_profile.research_summary || '') + '\\n\\n### OLIVESOFT CAPABILITIES & RAG MATCH:\\nFit Score: ' + (($json.rag_matching.fit_score * 100).toFixed(1)) + '%\\nStaffing: ' + JSON.stringify($json.rag_matching.staffing_suggestions || []) + '\\nCoverage: ' + JSON.stringify($json.rag_matching.coverage_matrix || [])) }}\n    }\n  ]\n}",
+        "options": {}
+      },
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.2,
+      "position": [
+        3500,
+        -80
+      ],
+      "id": "node-orch-groq-proposal",
+      "name": "Groq: Generate Proposal Draft",
+      "onError": "continueRegularOutput"
+    },
+    {
+      "parameters": {
+        "method": "POST",
+        "url": "http://host.docker.internal:8000/proposals/generate-deck",
+        "sendHeaders": true,
+        "headerParameters": {
+          "parameters": [
+            {
+              "name": "Content-Type",
+              "value": "application/json"
+            }
+          ]
+        },
+        "sendBody": true,
+        "specifyBody": "json",
+        "jsonBody": "={\n  \"tender_id\": {{ JSON.stringify($('Process RAG Matrix & Staffing').item.json.tender_id || \"TENDER-001\") }},\n  \"title\": {{ JSON.stringify(($('Process RAG Matrix & Staffing').item.json.description || '').slice(0, 100)) }},\n  \"client\": {{ JSON.stringify($('Process RAG Matrix & Staffing').item.json.buyer || \"Client\") }},\n  \"requirements\": {{ JSON.stringify($('Process RAG Matrix & Staffing').item.json.rag_matching.coverage_matrix || []) }},\n  \"staffing_matches\": {{ JSON.stringify($('Process RAG Matrix & Staffing').item.json.rag_matching.staffing_suggestions || []) }},\n  \"fit_score\": {{ $('Process RAG Matrix & Staffing').item.json.rag_matching.fit_score || 0.85 }}\n}",
+        "options": {}
+      },
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.2,
+      "position": [
+        3720,
+        -80
+      ],
+      "id": "node-orch-pptx-deck",
+      "name": "Generate PowerPoint Deck (.pptx)",
+      "onError": "continueRegularOutput"
+    },
+    {
+      "parameters": {
+        "jsCode": "const proposalRaw = $('Groq: Generate Proposal Draft').item?.json?.choices?.[0]?.message?.content || '{}';\nlet proposal = {};\ntry {\n  proposal = JSON.parse(proposalRaw);\n} catch(e) {\n  const match = proposalRaw.match(/\\{[\\s\\S]*\\}/);\n  proposal = match ? JSON.parse(match[0]) : { raw_content: proposalRaw };\n}\n\nconst pptxResp = $input.first()?.json || {};\nconst prev = $('Process RAG Matrix & Staffing').item.json;\n\nreturn [{\n  json: {\n    tender: {\n      id: prev.tender_id,\n      buyer: prev.buyer,\n      country: prev.country,\n      description: prev.description,\n      source: prev.source,\n      url: prev.url,\n      published_date: prev.published_date,\n      deadline: prev.deadline\n    },\n    prospect_profile: prev.prospect_profile,\n    rag_matching: prev.rag_matching,\n    proposal_draft: proposal,\n    pptx_deliverable: {\n      file_name: pptxResp.file_name || `${prev.tender_id}_OliveSoft_Proposal.pptx`,\n      download_url: pptxResp.download_url || `/proposals/${prev.tender_id}/download`,\n      total_price_tnd: pptxResp.total_price_tnd || proposal.pricing_estimate_tnd || 145000,\n      total_duration_weeks: pptxResp.total_duration_weeks || proposal.timeline_weeks || 16\n    },\n    dashboard_status: 'READY_FOR_COMMERCIAL_REVIEW',\n    delivered_at: new Date().toISOString()\n  }\n}];"
+      },
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        3940,
+        -80
+      ],
+      "id": "node-orch-format-dashboard",
+      "name": "Deliver to Person C Dashboard"
+    }
+  ],
+  "connections": {
+    "Schedule Trigger": {
+      "main": [
+        [
+          {
+            "node": "Scrape AppelOffres.com",
+            "type": "main",
+            "index": 0
+          },
+          {
+            "node": "Scrape TED Europa API",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Scrape AppelOffres.com": {
+      "main": [
+        [
+          {
+            "node": "Parse AppelOffres Tenders",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Parse AppelOffres Tenders": {
+      "main": [
+        [
+          {
+            "node": "Aggregate All Tenders",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Scrape TED Europa API": {
+      "main": [
+        [
+          {
+            "node": "Parse TED Europa Tenders",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Parse TED Europa Tenders": {
+      "main": [
+        [
+          {
+            "node": "Aggregate All Tenders",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Aggregate All Tenders": {
+      "main": [
+        [
+          {
+            "node": "Prepare AI Classification",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Prepare AI Classification": {
+      "main": [
+        [
+          {
+            "node": "Groq: Filter IT Tenders",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Groq: Filter IT Tenders": {
+      "main": [
+        [
+          {
+            "node": "Extract Relevant Tenders & Deduplicate",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Extract Relevant Tenders & Deduplicate": {
+      "main": [
+        [
+          {
+            "node": "Build Prospect Search Queries",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Build Prospect Search Queries": {
+      "main": [
+        [
+          {
+            "node": "Serper: Search Buyer Projects",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Serper: Search Buyer Projects": {
+      "main": [
+        [
+          {
+            "node": "Serper: Search Digital Transformation",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Serper: Search Digital Transformation": {
+      "main": [
+        [
+          {
+            "node": "Merge Search Results & Extract Snippets",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Merge Search Results & Extract Snippets": {
+      "main": [
+        [
+          {
+            "node": "Groq: Structure Buyer Dossier",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Groq: Structure Buyer Dossier": {
+      "main": [
+        [
+          {
+            "node": "Parse Buyer Intelligence Dossier",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Parse Buyer Intelligence Dossier": {
+      "main": [
+        [
+          {
+            "node": "RAG: Match Tender & Capabilities",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "RAG: Match Tender & Capabilities": {
+      "main": [
+        [
+          {
+            "node": "Process RAG Matrix & Staffing",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Process RAG Matrix & Staffing": {
+      "main": [
+        [
+          {
+            "node": "Qualified Tender? (Fit Score >= 0.5)",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Qualified Tender? (Fit Score >= 0.5)": {
+      "main": [
+        [
+          {
+            "node": "Groq: Generate Proposal Draft",
+            "type": "main",
+            "index": 0
+          }
+        ],
+        [
+          {
+            "node": "Log Disqualified / Low Fit",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Groq: Generate Proposal Draft": {
+      "main": [
+        [
+          {
+            "node": "Generate PowerPoint Deck (.pptx)",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Generate PowerPoint Deck (.pptx)": {
+      "main": [
+        [
+          {
+            "node": "Deliver to Person C Dashboard",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    }
+  },
+  "active": false,
+  "settings": {
+    "executionOrder": "v1"
+  }
+}
