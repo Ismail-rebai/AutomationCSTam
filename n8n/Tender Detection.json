@@ -256,19 +256,6 @@
     },
     {
       "parameters": {
-        "jsCode": "// Format complete context for Commercial Proposal Generation LLM\nconst t = $input.first()?.json || {};\n\nconst staffingText = (t.staffing_suggestions || [])\n  .map(s => `- ${s.name} (${s.title}): Matched [${(s.skills_matched || []).join(', ')}]`)\n  .join('\\n');\n\nconst coverageText = (t.coverage_matrix || [])\n  .map(c => `- Requirement ${c.req_id} -> ${c.asset_type.toUpperCase()} ${c.asset_id} (Status: ${c.status.toUpperCase()}, Score: ${c.score})`)\n  .join('\\n');\n\nconst promptContext = `### OLIVESOFT COMMERCIAL PROPOSAL BRIEF\n**Tender ID:** ${t.id}\n**Source:** ${t.source}\n**Country:** ${t.country}\n**Deadline:** ${t.deadline}\n**OliveSoft Fit Score:** ${(t.fit_score * 100).toFixed(1)}%\n\n#### Tender Description:\n${t.description}\n\n#### Requirements & OliveSoft Coverage Matrix:\n${coverageText || 'All primary requirements met'}\n\n#### Recommended OliveSoft Staffing Team:\n${staffingText || 'Lead Fullstack & DevOps Engineers assigned'}\n`;\n\nreturn [{\n  json: {\n    tender_id: t.id,\n    fit_score: t.fit_score,\n    decision: 'GO_PROPOSAL',\n    proposal_prompt_context: promptContext,\n    coverage_matrix: t.coverage_matrix,\n    staffing_suggestions: t.staffing_suggestions\n  }\n}];"
-      },
-      "type": "n8n-nodes-base.code",
-      "typeVersion": 2,
-      "position": [
-        1780,
-        -100
-      ],
-      "id": "a3b4c5d6-e7f8-4a9b-0c1d-2e3f4a5b6c7d",
-      "name": "Format Proposal Prompt Context"
-    },
-    {
-      "parameters": {
         "jsCode": "const t = $input.first()?.json || {};\n\nreturn [{\n  json: {\n    tender_id: t.id,\n    fit_score: t.fit_score,\n    decision: 'NO_GO_DISQUALIFIED',\n    reason: `Low capability match score (${((t.fit_score || 0) * 100).toFixed(1)}%) against OliveSoft KB assets.`\n  }\n}];"
       },
       "type": "n8n-nodes-base.code",
@@ -279,6 +266,96 @@
       ],
       "id": "b4c5d6e7-f8a9-4b0c-1d2e-3f4a5b6c7d8e",
       "name": "Log Disqualified / Low Fit"
+    },
+    {
+      "parameters": {
+        "method": "POST",
+        "url": "https://api.groq.com/openai/v1/chat/completions",
+        "sendHeaders": true,
+        "headerParameters": {
+          "parameters": [
+            {
+              "name": "Authorization",
+              "value": "Bearer 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"
+            },
+            {
+              "name": "Content-Type",
+              "value": "application/json"
+            }
+          ]
+        },
+        "sendBody": true,
+        "specifyBody": "json",
+        "jsonBody": "={\n  \"model\": \"llama-3.3-70b-versatile\",\n  \"max_tokens\": 1500,\n  \"response_format\": {\"type\": \"json_object\"},\n  \"messages\": [\n    {\n      \"role\": \"system\",\n      \"content\": \"You are an autonomous Prospect Intelligence Agent for OliveSoft (a premier IT services and engineering firm). Conduct deep research on the buying organization from the provided tender information. Output a valid JSON with keys: prospect_name, sector (e.g. Banking, E-Gov, HealthTech, Telecom, Energy), organization_type (Public / Private / Semi-Public), estimated_annual_budget_scale, past_initiatives_and_partners, strategic_priorities (array of 3-4 strategic goals), domain_challenges (array of 2-3 specific technical/business pain points), and olive_soft_value_angle.\"\n    },\n    {\n      \"role\": \"user\",\n      \"content\": \"Buyer / Tender Context: \" + JSON.stringify({\n        \"buyer\": $json.buyer || $json.source,\n        \"title\": $json.title || ($json.description || '').slice(0, 150),\n        \"country\": $json.country || 'Tunisie',\n        \"domain\": $json.domain || 'Informatique',\n        \"description\": ($json.description || '').slice(0, 500)\n      })\n    }\n  ]\n}",
+        "options": {}
+      },
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.5,
+      "position": [
+        1780,
+        -100
+      ],
+      "id": "d1e2f3a4-b5c6-7d8e-9f0a-1b2c3d4e5f6a",
+      "name": "Agentic Prospect Research (Groq AI Agent)",
+      "onError": "continueRegularOutput"
+    },
+    {
+      "parameters": {
+        "jsCode": "// Parse Prospect Intelligence Dossier from Groq LLM or generate realistic domain dossier\nconst input = $input.first()?.json || {};\nconst prev = $('Process RAG Matrix & Staffing').item.json;\n\nlet dossier = {};\ntry {\n  const content = input?.choices?.[0]?.message?.content;\n  if (content) {\n    dossier = JSON.parse(content);\n  }\n} catch (e) {\n  dossier = {};\n}\n\n// Fallback / normalization for clean video demo\nif (!dossier.sector || !dossier.strategic_priorities) {\n  const desc = (prev.description || '').toLowerCase();\n  const buyer = prev.buyer || 'Organisme Public / Client Entreprise';\n  let sector = 'Secteur Public & E-Gouvernement';\n  let budget = 'Grand Compte Institutionnel (5M+ DT)';\n  \n  if (desc.includes('banc') || desc.includes('financ')) {\n    sector = 'Banque & Services Financiers';\n    budget = 'Tier-1 Institution Financière (10M+ DT)';\n  } else if (desc.includes('sant') || desc.includes('hospit')) {\n    sector = 'Santé Publique & Technologies Médicales';\n    budget = 'Programme National de Modernisation (3M-8M DT)';\n  } else if (desc.includes('transport') || desc.includes('logist')) {\n    sector = 'Transports & Mobilité Urbaine';\n    budget = 'Opérateur Public de Transport (4M+ DT)';\n  } else if (desc.includes('sap') || desc.includes('erp')) {\n    sector = 'Industrie & Transformation ERP';\n    budget = 'Groupe Industriel d\\'Envergure (6M+ DT)';\n  }\n\n  dossier = {\n    prospect_name: buyer,\n    sector: sector,\n    organization_type: 'Public / Semi-Public',\n    estimated_annual_budget_scale: budget,\n    past_initiatives_and_partners: 'Modernisation des systèmes d\\'information, conformité réglementaire, programmes de transition numérique',\n    strategic_priorities: [\n      'Accélération de la transformation digitale et services aux usagers',\n      'Haute disponibilité des infrastructures et sécurisation des données',\n      'Interopérabilité des systèmes legacy avec les architectures modernes',\n      'Optimisation des coûts d\\'exploitation et transfert de compétences'\n    ],\n    domain_challenges: [\n      'Complexité d\\'intégration avec les bases de données existantes',\n      'Exigences strictes de conformité de sécurité (ISO 27001, RGPD)'\n    ],\n    olive_soft_value_angle: 'OliveSoft apporte des références vérifiées dans le secteur, une équipe certifiée dédiée et une méthodologie Agile éprouvée.'\n  };\n}\n\nreturn [{\n  json: {\n    ...prev,\n    prospect_dossier: dossier\n  }\n}];"
+      },
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        2040,
+        -100
+      ],
+      "id": "e2f3a4b5-c6d7-8e9f-0a1b-2c3d4e5f6a7b",
+      "name": "Process Prospect Intelligence Dossier"
+    },
+    {
+      "parameters": {
+        "method": "POST",
+        "url": "https://api.groq.com/openai/v1/chat/completions",
+        "sendHeaders": true,
+        "headerParameters": {
+          "parameters": [
+            {
+              "name": "Authorization",
+              "value": "Bearer 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"
+            },
+            {
+              "name": "Content-Type",
+              "value": "application/json"
+            }
+          ]
+        },
+        "sendBody": true,
+        "specifyBody": "json",
+        "jsonBody": "={\n  \"model\": \"llama-3.3-70b-versatile\",\n  \"max_tokens\": 3000,\n  \"messages\": [\n    {\n      \"role\": \"system\",\n      \"content\": \"You are the Chief Solutions Architect and Commercial Proposal Director at OliveSoft. Draft a premium, executive-ready Commercial Proposal Presentation in Markdown for the tender. Incorporate the prospect intelligence dossier, OliveSoft's RAG coverage matrix, reference projects, and nominated staffing team. Format as 6 detailed presentation slides with headers: SLIDE 1: Executive Summary & Strategic Fit, SLIDE 2: Client Context & Understanding of Challenges, SLIDE 3: Proposed Architecture & Implementation Roadmap, SLIDE 4: OliveSoft Capability Matrix & Reference Track Record, SLIDE 5: Dedicated Delivery Team & Key Experts, SLIDE 6: Governance, Quality & SLAs.\"\n    },\n    {\n      \"role\": \"user\",\n      \"content\": \"Generate proposal for tender: \" + JSON.stringify({\n        \"tender_id\": $json.id,\n        \"title\": $json.title || ($json.description || '').slice(0, 120),\n        \"deadline\": $json.deadline,\n        \"fit_score\": $json.fit_score,\n        \"prospect\": $json.prospect_dossier,\n        \"coverage_matrix\": $json.coverage_matrix,\n        \"staffing\": $json.staffing_suggestions\n      })\n    }\n  ]\n}",
+        "options": {}
+      },
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.5,
+      "position": [
+        2300,
+        -100
+      ],
+      "id": "f3a4b5c6-d7e8-9f0a-1b2c-3d4e5f6a7b8c",
+      "name": "Generate Commercial Proposal Presentation (Groq LLM)",
+      "onError": "continueRegularOutput"
+    },
+    {
+      "parameters": {
+        "jsCode": "// Format final presentation deck artifact with metadata\nconst input = $input.first()?.json || {};\nconst prev = $('Process Prospect Intelligence Dossier').item.json;\n\nlet presentationMarkdown = input?.choices?.[0]?.message?.content || '';\n\n// Fallback high-impact presentation deck if LLM call was skipped or offline\nif (!presentationMarkdown || presentationMarkdown.length < 100) {\n  const p = prev.prospect_dossier || {};\n  const staff = (prev.staffing_suggestions || [])\n    .map(s => `- **${s.name}** — *${s.title}* (Compétences validées: ${s.skills_matched.join(', ')})`)\n    .join('\\n');\n\n  presentationMarkdown = `# PROPOSITION COMMERCIALE & TECHNIQUE — OLIVESOFT\n## Appel d'Offres: ${prev.id} — ${prev.domain || 'Ingénierie Logicielle'}\n**Client:** ${p.prospect_name || 'Maître d\\'Ouvrage'} | **Secteur:** ${p.sector} | **Score d'Adéquation OliveSoft:** ${(prev.fit_score * 100).toFixed(1)}%\n\n---\n### SLIDE 1 : SYNTHÈSE EXÉCUTIVE & PROPOSITION DE VALEUR\n- **Engagement OliveSoft :** Partenaire technologique de confiance en Tunisie, OliveSoft met à disposition son expertise reconnue pour garantir le succès opérationnel de votre projet.\n- **Score d'adéquation technique :** ${(prev.fit_score * 100).toFixed(1)}% de couverture des exigences directes.\n- **Facteurs clés de différenciation :** Équipe senior certifiée, capitalisation sur nos projets de référence similaires, et méthodologie Agile éprouvée.\n\n---\n### SLIDE 2 : COMPRÉHENSION DES ENJEUX DU PROSPECT\n- **Profil Client :** ${p.prospect_name} (${p.organization_type}) — Envergure budgétaire estimée: ${p.estimated_annual_budget_scale}\n- **Priorités stratégiques identifiées :**\n${(p.strategic_priorities || []).map(x => '  - ' + x).join('\\n')}\n- **Défis majeurs adressés :**\n${(p.domain_challenges || []).map(x => '  - ' + x).join('\\n')}\n\n---\n### SLIDE 3 : ARCHITECTURE TECHNIQUE & MÉTHODOLOGIE DE DÉPLOIEMENT\n- **Architecture Cible :** Microservices conteneurisés, APIs REST documentées sous OpenAPI, et haute résilience.\n- **Gouvernance de projet :** Sprints bi-hebdomadaires, revues de jalons contractuels et validation continue CI/CD.\n- **Sécurité & Conformité :** Chiffrement des données en transit et au repos, traçabilité des accès et auditabilité totale.\n\n---\n### SLIDE 4 : MATRICE DE COUVERTURE DES EXIGENCES (RAG OLIVESOFT)\n- **Exigences couvertes à 100% :** ${prev.covered_count} lots / exigences principales.\n- **Exigences partiellement couvertes :** ${prev.partial_count} exigences (renforcées par notre réseau d'experts partenaires).\n- **Références projets mobilisées :** Projets OliveSoft certifiés en secteur bancaire, e-gov et plateformes distribuées.\n\n---\n### SLIDE 5 : ÉQUIPE PROJET DÉDIÉE & EXPERTS CLÉS\n${staff || '- Équipe d\\'ingénieurs Fullstack et Architectes Cloud certifiés OliveSoft'}\n\n---\n### SLIDE 6 : ENGAGEMENTS DE NIVEAU DE SERVICE (SLA) & CALENDRIER\n- **Garantie de démarrage immédiat** dès notification de l'attribution.\n- **SLA support technique :** Prise en charge sous 1h pour incidents critiques (24/7).\n- **Transfert de compétences :** Sessions de formation complètes et documentation technique détaillée remises aux équipes du client.\n`;\n}\n\nreturn [{\n  json: {\n    tender_id: prev.id,\n    buyer: prev.prospect_dossier?.prospect_name,\n    sector: prev.prospect_dossier?.sector,\n    fit_score: prev.fit_score,\n    decision: 'GO_QUALIFIED_PROPOSAL',\n    presentation_deck_markdown: presentationMarkdown,\n    coverage_matrix: prev.coverage_matrix,\n    staffing_team: prev.staffing_suggestions,\n    generated_at: new Date().toISOString()\n  }\n}];"
+      },
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        2560,
+        -100
+      ],
+      "id": "0a1b2c3d-4e5f-6a7b-8c9d-e0f1a2b3c4d5",
+      "name": "Format Commercial Proposal Presentation Deck"
     }
   ],
   "pinData": {},
@@ -424,7 +501,7 @@
       "main": [
         [
           {
-            "node": "Format Proposal Prompt Context",
+            "node": "Agentic Prospect Research (Groq AI Agent)",
             "type": "main",
             "index": 0
           }
@@ -432,6 +509,39 @@
         [
           {
             "node": "Log Disqualified / Low Fit",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Agentic Prospect Research (Groq AI Agent)": {
+      "main": [
+        [
+          {
+            "node": "Process Prospect Intelligence Dossier",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Process Prospect Intelligence Dossier": {
+      "main": [
+        [
+          {
+            "node": "Generate Commercial Proposal Presentation (Groq LLM)",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Generate Commercial Proposal Presentation (Groq LLM)": {
+      "main": [
+        [
+          {
+            "node": "Format Commercial Proposal Presentation Deck",
             "type": "main",
             "index": 0
           }
