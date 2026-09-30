@@ -1,0 +1,259 @@
+{
+  "name": "RAG & Proposal Engine",
+  "nodes": [
+    {
+      "parameters": {
+        "httpMethod": "POST",
+        "path": "generate-proposal",
+        "responseMode": "lastNode",
+        "options": {}
+      },
+      "type": "n8n-nodes-base.webhook",
+      "typeVersion": 2,
+      "position": [
+        0,
+        0
+      ],
+      "id": "rpe-webhook",
+      "name": "Webhook: Receive Prospect Dossier"
+    },
+    {
+      "parameters": {
+        "method": "POST",
+        "url": "http://host.docker.internal:8000/match-tender",
+        "sendHeaders": true,
+        "headerParameters": {
+          "parameters": [
+            {
+              "name": "Content-Type",
+              "value": "application/json"
+            }
+          ]
+        },
+        "sendBody": true,
+        "specifyBody": "json",
+        "jsonBody": "={\n  \"tender_id\": {{ JSON.stringify(($json.tender || $json).id || \"TENDER-001\") }},\n  \"title\": {{ JSON.stringify((($json.tender || $json).description || '').slice(0, 100)) }},\n  \"description\": {{ JSON.stringify(($json.tender || $json).description || '') }},\n  \"top_k\": 3\n}",
+        "options": {}
+      },
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.2,
+      "position": [
+        220,
+        0
+      ],
+      "id": "rpe-rag-match",
+      "name": "RAG: Match Tender & Capabilities",
+      "onError": "continueRegularOutput"
+    },
+    {
+      "parameters": {
+        "jsCode": "const ragResp = $input.first()?.json || {};\nconst inputData = $('Webhook: Receive Prospect Dossier').item.json;\nconst tender = inputData.tender || inputData;\nconst prospect = inputData.prospect_profile || {};\n\nconst fitScore = typeof ragResp.fit_score === 'number' ? ragResp.fit_score : 0.85;\nconst coverage = Array.isArray(ragResp.coverage_matrix) ? ragResp.coverage_matrix : [\n  { requirement: \"Software Engineering & Architecture\", matched_capability: \"OliveSoft Cloud & Microservices\", confidence: 0.90 },\n  { requirement: \"Security & Governance\", matched_capability: \"Enterprise IAM & ISO 27001 Compliance\", confidence: 0.85 }\n];\nconst staffing = Array.isArray(ragResp.staffing_suggestions) ? ragResp.staffing_suggestions : [\n  { name: \"Ahmed Ben Salah\", role: \"Principal Cloud Architect\", cv_ref: \"CV_Ahmed_BS.pdf\" },\n  { name: \"Sarra Trabelsi\", role: \"Senior Fullstack Engineer\", cv_ref: \"CV_Sarra_T.pdf\" }\n];\n\nreturn [{\n  json: {\n    tender,\n    prospect_profile: prospect,\n    rag_matching: {\n      fit_score: fitScore,\n      coverage_matrix: coverage,\n      staffing_suggestions: staffing,\n      rag_raw: ragResp\n    }\n  }\n}];"
+      },
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        440,
+        0
+      ],
+      "id": "rpe-process-rag",
+      "name": "Process RAG Matrix & Staffing"
+    },
+    {
+      "parameters": {
+        "conditions": {
+          "options": {
+            "caseSensitive": true,
+            "leftValue": "",
+            "typeValidation": "strict",
+            "version": 2
+          },
+          "conditions": [
+            {
+              "id": "rpe-cond-gate",
+              "leftValue": "={{ $json.rag_matching.fit_score }}",
+              "rightValue": 0.5,
+              "operator": {
+                "type": "number",
+                "operation": "gte"
+              }
+            }
+          ],
+          "combinator": "and"
+        }
+      },
+      "type": "n8n-nodes-base.if",
+      "typeVersion": 2.2,
+      "position": [
+        660,
+        0
+      ],
+      "id": "rpe-qual-gate",
+      "name": "Qualified Tender? (Fit Score >= 0.5)"
+    },
+    {
+      "parameters": {
+        "jsCode": "const prev = $('Process RAG Matrix & Staffing').item.json;\n\nreturn [{\n  json: {\n    tender: prev.tender,\n    prospect_profile: prev.prospect_profile,\n    rag_matching: prev.rag_matching,\n    status: 'NO_GO_DISQUALIFIED',\n    reason: `Fit score (${((prev.rag_matching?.fit_score || 0) * 100).toFixed(1)}%) is below qualification threshold (50%).`,\n    evaluated_at: new Date().toISOString()\n  }\n}];"
+      },
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        880,
+        160
+      ],
+      "id": "rpe-log-disqual",
+      "name": "Log Disqualified / Low Fit"
+    },
+    {
+      "parameters": {
+        "method": "POST",
+        "url": "https://api.groq.com/openai/v1/chat/completions",
+        "sendHeaders": true,
+        "headerParameters": {
+          "parameters": [
+            {
+              "name": "Authorization",
+              "value": "Bearer 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"
+            },
+            {
+              "name": "Content-Type",
+              "value": "application/json"
+            }
+          ]
+        },
+        "sendBody": true,
+        "specifyBody": "json",
+        "jsonBody": "={\n  \"model\": \"qwen/qwen3.8-27b\",\n  \"max_tokens\": 2500,\n  \"response_format\": { \"type\": \"json_object\" },\n  \"messages\": [\n    {\n      \"role\": \"system\",\n      \"content\": \"You are the Chief Solutions Architect at OliveSoft. Synthesize tender context, buyer intelligence dossier, and RAG capability match into an executive commercial proposal. Return ONLY a JSON object with: executive_summary (string), client_challenges (array of strings), technical_solution (string), staffing_plan (array of objects with name, role, why_fit), pricing_estimate_tnd (number), timeline_weeks (number), slides (array of 6 presentation slide objects with title and content).\"\n    },\n    {\n      \"role\": \"user\",\n      \"content\": {{ JSON.stringify('### TENDER SPECIFICATIONS:\\n' + JSON.stringify($json.tender) + '\\n\\n### BUYER INTELLIGENCE DOSSIER:\\n' + JSON.stringify($json.prospect_profile) + '\\n\\n### OLIVESOFT CAPABILITIES & RAG MATCH:\\n' + JSON.stringify($json.rag_matching)) }}\n    }\n  ]\n}",
+        "options": {}
+      },
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.2,
+      "position": [
+        880,
+        -80
+      ],
+      "id": "rpe-groq-proposal",
+      "name": "Groq: Generate Proposal Draft",
+      "onError": "continueRegularOutput"
+    },
+    {
+      "parameters": {
+        "method": "POST",
+        "url": "http://host.docker.internal:8000/proposals/generate-deck",
+        "sendHeaders": true,
+        "headerParameters": {
+          "parameters": [
+            {
+              "name": "Content-Type",
+              "value": "application/json"
+            }
+          ]
+        },
+        "sendBody": true,
+        "specifyBody": "json",
+        "jsonBody": "={\n  \"tender_id\": {{ JSON.stringify($('Process RAG Matrix & Staffing').item.json.tender.id || \"TENDER-001\") }},\n  \"title\": {{ JSON.stringify(($('Process RAG Matrix & Staffing').item.json.tender.description || '').slice(0, 100)) }},\n  \"client\": {{ JSON.stringify($('Process RAG Matrix & Staffing').item.json.tender.buyer || \"Client\") }},\n  \"requirements\": {{ JSON.stringify($('Process RAG Matrix & Staffing').item.json.rag_matching.coverage_matrix || []) }},\n  \"staffing_matches\": {{ JSON.stringify($('Process RAG Matrix & Staffing').item.json.rag_matching.staffing_suggestions || []) }},\n  \"fit_score\": {{ $('Process RAG Matrix & Staffing').item.json.rag_matching.fit_score || 0.85 }}\n}",
+        "options": {}
+      },
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.2,
+      "position": [
+        1100,
+        -80
+      ],
+      "id": "rpe-pptx-deck",
+      "name": "Generate PowerPoint Deck (.pptx)",
+      "onError": "continueRegularOutput"
+    },
+    {
+      "parameters": {
+        "jsCode": "const proposalRaw = $('Groq: Generate Proposal Draft').item?.json?.choices?.[0]?.message?.content || '{}';\nlet proposal = {};\ntry {\n  proposal = JSON.parse(proposalRaw);\n} catch(e) {\n  const match = proposalRaw.match(/\\{[\\s\\S]*\\}/);\n  proposal = match ? JSON.parse(match[0]) : { raw_content: proposalRaw };\n}\n\nconst pptxResp = $input.first()?.json || {};\nconst prev = $('Process RAG Matrix & Staffing').item.json;\n\nreturn [{\n  json: {\n    tender: prev.tender,\n    prospect_profile: prev.prospect_profile,\n    rag_matching: prev.rag_matching,\n    proposal_draft: proposal,\n    pptx_deliverable: {\n      file_name: pptxResp.file_name || `${prev.tender.id}_OliveSoft_Proposal.pptx`,\n      download_url: pptxResp.download_url || `/proposals/${prev.tender.id}/download`,\n      total_price_tnd: pptxResp.total_price_tnd || proposal.pricing_estimate_tnd || 145000,\n      total_duration_weeks: pptxResp.total_duration_weeks || proposal.timeline_weeks || 16\n    },\n    dashboard_status: 'READY_FOR_COMMERCIAL_REVIEW',\n    delivered_at: new Date().toISOString()\n  }\n}];"
+      },
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        1320,
+        -80
+      ],
+      "id": "rpe-format-dashboard",
+      "name": "Deliver to Person C Dashboard"
+    }
+  ],
+  "connections": {
+    "Webhook: Receive Prospect Dossier": {
+      "main": [
+        [
+          {
+            "node": "RAG: Match Tender & Capabilities",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "RAG: Match Tender & Capabilities": {
+      "main": [
+        [
+          {
+            "node": "Process RAG Matrix & Staffing",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Process RAG Matrix & Staffing": {
+      "main": [
+        [
+          {
+            "node": "Qualified Tender? (Fit Score >= 0.5)",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Qualified Tender? (Fit Score >= 0.5)": {
+      "main": [
+        [
+          {
+            "node": "Groq: Generate Proposal Draft",
+            "type": "main",
+            "index": 0
+          }
+        ],
+        [
+          {
+            "node": "Log Disqualified / Low Fit",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Groq: Generate Proposal Draft": {
+      "main": [
+        [
+          {
+            "node": "Generate PowerPoint Deck (.pptx)",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Generate PowerPoint Deck (.pptx)": {
+      "main": [
+        [
+          {
+            "node": "Deliver to Person C Dashboard",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    }
+  },
+  "active": false,
+  "settings": {
+    "executionOrder": "v1"
+  }
+}

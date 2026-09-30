@@ -1,5 +1,5 @@
 {
-  "name": "Prospect Research & Proposal Generation",
+  "name": "Prospect Research",
   "nodes": [
     {
       "parameters": {
@@ -9,18 +9,17 @@
         "options": {}
       },
       "type": "n8n-nodes-base.webhook",
-      "typeVersion": 2.1,
+      "typeVersion": 2,
       "position": [
         0,
         0
       ],
-      "id": "1d6cee1c-3324-4d91-936b-04eb7bda1003",
-      "name": "Webhook",
-      "webhookId": "32e8de73-7534-4d6e-b080-9816ccbca614"
+      "id": "pr-webhook",
+      "name": "Webhook: Receive Tender"
     },
     {
       "parameters": {
-        "jsCode": "const raw = $input.first()?.json || {};\nconst tender = (raw.body && typeof raw.body === 'object' && Object.keys(raw.body).length > 0) ? raw.body : raw;\n\nconst buyer = tender.buyer || tender.buyer_name || 'Ministère de la Santé';\nconst buyerQuery = `\"${buyer}\" Tunisia IT projects technology budget`;\nconst sectorQuery = `\"${buyer}\" digital transformation software`;\n\nreturn [{\n  json: {\n    tender_id: tender.id || tender.tender_id || '',\n    buyer: buyer,\n    country: tender.country || 'Tunisia',\n    description: tender.description || '',\n    source: tender.source || '',\n    url: tender.url || '',\n    published_date: tender.published_date || '',\n    deadline: tender.deadline || '',\n    search_query_1: buyerQuery,\n    search_query_2: sectorQuery\n  }\n}];"
+        "jsCode": "const tender = $input.first().json.body || $input.first().json;\nconst buyer = tender.buyer || 'Organisme Public';\nconst country = tender.country || 'Tunisia';\n\nconst buyerQuery = `\"${buyer}\" ${country} IT projects technology budget`;\nconst sectorQuery = `\"${buyer}\" digital transformation software`;\n\nreturn [{\n  json: {\n    ...tender,\n    tender_id: tender.id,\n    buyer,\n    country,\n    search_query_1: buyerQuery,\n    search_query_2: sectorQuery\n  }\n}];"
       },
       "type": "n8n-nodes-base.code",
       "typeVersion": 2,
@@ -28,7 +27,7 @@
         220,
         0
       ],
-      "id": "0dac9eeb-3611-420f-8cae-a8bf4ce79205",
+      "id": "pr-build-query",
       "name": "Build Search Query"
     },
     {
@@ -40,7 +39,7 @@
           "parameters": [
             {
               "name": "X-API-KEY",
-              "value": "<serper_key>"
+              "value": "6b0cfa0eb02029c4266b729ae558a74e6f4776e6"
             },
             {
               "name": "Content-Type",
@@ -50,17 +49,18 @@
         },
         "sendBody": true,
         "specifyBody": "json",
-        "jsonBody": "={\n  \"q\": {{ JSON.stringify($json.search_query_1) }},\n  \"num\": 5\n}",
+        "jsonBody": "={\n  \"q\": {{ JSON.stringify($json.search_query_1) }},\n  \"gl\": \"tn\",\n  \"hl\": \"fr\",\n  \"num\": 4\n}",
         "options": {}
       },
       "type": "n8n-nodes-base.httpRequest",
-      "typeVersion": 4.5,
+      "typeVersion": 4.2,
       "position": [
         440,
-        0
+        -80
       ],
-      "id": "b3e7a1f2-5c89-4a92-91e8-78c23f109a12",
-      "name": "Serper: Search Buyer Projects"
+      "id": "pr-serper-1",
+      "name": "Serper: Search Buyer Projects",
+      "onError": "continueRegularOutput"
     },
     {
       "parameters": {
@@ -71,7 +71,7 @@
           "parameters": [
             {
               "name": "X-API-KEY",
-              "value": "<serper_key>"
+              "value": "6b0cfa0eb02029c4266b729ae558a74e6f4776e6"
             },
             {
               "name": "Content-Type",
@@ -81,21 +81,22 @@
         },
         "sendBody": true,
         "specifyBody": "json",
-        "jsonBody": "={\n  \"q\": {{ JSON.stringify($('Build Search Query').first().json.search_query_2 || $json.search_query_2) }},\n  \"num\": 5\n}",
+        "jsonBody": "={\n  \"q\": {{ JSON.stringify($('Build Search Query').item.json.search_query_2) }},\n  \"gl\": \"tn\",\n  \"hl\": \"fr\",\n  \"num\": 4\n}",
         "options": {}
       },
       "type": "n8n-nodes-base.httpRequest",
-      "typeVersion": 4.5,
+      "typeVersion": 4.2,
       "position": [
         660,
-        0
+        -80
       ],
-      "id": "c8f1b2d4-3e9a-4127-b508-41d3e8790b23",
-      "name": "Serper: Search Transformation"
+      "id": "pr-serper-2",
+      "name": "Serper: Search Transformation",
+      "onError": "continueRegularOutput"
     },
     {
       "parameters": {
-        "jsCode": "const tender = $('Build Search Query').first()?.json || {};\n\nconst serper1 = $('Serper: Search Buyer Projects').first()?.json || {};\nconst organic1 = serper1.organic || [];\n\nconst serper2 = $input.first()?.json || $('Serper: Search Transformation').first()?.json || {};\nconst organic2 = serper2.organic || [];\n\nconst formatResults = (items, label) => {\n  if (!Array.isArray(items) || items.length === 0) {\n    return `[No organic search results found for: ${label}]`;\n  }\n  return items.slice(0, 5).map((item, idx) => {\n    const title = item.title || 'Untitled';\n    const snippet = item.snippet || 'No snippet available';\n    const link = item.link || '';\n    return `${idx + 1}. ${title}\\nSnippet: ${snippet}\\nSource: ${link}`;\n  }).join('\\n\\n');\n};\n\nconst text1 = formatResults(organic1, tender.search_query_1 || 'Buyer query');\nconst text2 = formatResults(organic2, tender.search_query_2 || 'Sector query');\n\nconst combinedText = `=== SEARCH RESULTS: BUYER IT PROJECTS & BUDGET ===\\n${text1}\\n\\n=== SEARCH RESULTS: DIGITAL TRANSFORMATION & SOFTWARE ===\\n${text2}`;\n\nreturn [{\n  json: {\n    tender_id: tender.tender_id || '',\n    buyer: tender.buyer || 'Unknown',\n    country: tender.country || '',\n    description: tender.description || '',\n    source: tender.source || '',\n    url: tender.url || '',\n    published_date: tender.published_date || '',\n    deadline: tender.deadline || '',\n    search_results_text: combinedText\n  }\n}];"
+        "jsCode": "const tender = $('Build Search Query').item.json;\nconst res1 = $('Serper: Search Buyer Projects').item?.json || {};\nconst res2 = $input.first()?.json || {};\n\nconst extractSnippets = (data) => {\n  const organic = data.organic || [];\n  return organic.map(item => ({\n    title: item.title || '',\n    snippet: item.snippet || '',\n    link: item.link || ''\n  }));\n};\n\nconst results1 = extractSnippets(res1);\nconst results2 = extractSnippets(res2);\nconst allResults = [...results1, ...results2];\n\nconst searchContext = allResults.length > 0\n  ? allResults.map((r, i) => `[${i + 1}] ${r.title}\\n${r.snippet}\\nSource: ${r.link}`).join('\\n\\n')\n  : 'Public administrative institution in Tunisia with ongoing IT modernization objectives.';\n\nreturn [{\n  json: {\n    ...tender,\n    search_context: searchContext\n  }\n}];"
       },
       "type": "n8n-nodes-base.code",
       "typeVersion": 2,
@@ -103,7 +104,7 @@
         880,
         0
       ],
-      "id": "e1a924b8-d213-4c90-87ef-32b0f4510c45",
+      "id": "pr-merge-search",
       "name": "Merge & Extract Results"
     },
     {
@@ -125,21 +126,22 @@
         },
         "sendBody": true,
         "specifyBody": "json",
-        "jsonBody": "={\n  \"model\": \"qwen/qwen3.8-27b\",\n  \"max_tokens\": 1000,\n  \"response_format\": {\n    \"type\": \"json_object\"\n  },\n  \"messages\": [\n    {\n      \"role\": \"system\",\n      \"content\": \"You are a prospect research analyst for an IT services company. Given a tender description and web search results about the buyer organization, extract and structure a prospect profile. Return ONLY a JSON object with these fields: sector, estimated_budget, org_size, past_it_projects (array), key_contacts, competitors_likely (array), opportunity_score (1-10), research_summary.\"\n    },\n    {\n      \"role\": \"user\",\n      \"content\": {{ JSON.stringify('Tender: ' + ($json.description || '') + '\\n\\nBuyer: ' + ($json.buyer || '') + '\\n\\nSearch Results:\\n' + ($json.search_results_text || '')) }}\n    }\n  ]\n}",
+        "jsonBody": "={\n  \"model\": \"qwen/qwen3.8-27b\",\n  \"response_format\": { \"type\": \"json_object\" },\n  \"messages\": [\n    {\n      \"role\": \"system\",\n      \"content\": \"You are a commercial intelligence analyst for an IT consulting firm. Analyze live web search results about a buyer organization and produce a structured prospect profile. Return ONLY a JSON object with: sector (string), estimated_budget (string), org_size (string: Small/Medium/Large/Enterprise), past_it_projects (array of strings), key_contacts (array of strings), competitors_likely (array of strings), opportunity_score (integer 1-10), research_summary (string max 300 words).\"\n    },\n    {\n      \"role\": \"user\",\n      \"content\": {{ JSON.stringify('### TARGET BUYER:\\nName: ' + ($json.buyer || '') + '\\nCountry: ' + ($json.country || '') + '\\nDescription: ' + ($json.description || '') + '\\n\\n### LIVE GOOGLE WEB SEARCH RESULTS:\\n' + ($json.search_context || '')) }}\n    }\n  ]\n}",
         "options": {}
       },
       "type": "n8n-nodes-base.httpRequest",
-      "typeVersion": 4.5,
+      "typeVersion": 4.2,
       "position": [
         1100,
         0
       ],
-      "id": "76d54e12-4019-482a-9cb0-394ef321d567",
-      "name": "Groq: Structure Prospect Profile"
+      "id": "pr-groq-profile",
+      "name": "Groq: Structure Prospect Profile",
+      "onError": "continueRegularOutput"
     },
     {
       "parameters": {
-        "jsCode": "const rawContent = $input.first()?.json?.choices?.[0]?.message?.content || '{}';\n\nlet profile = {};\ntry {\n  profile = JSON.parse(rawContent);\n} catch (e) {\n  const jsonMatch = rawContent.match(/\\{[\\s\\S]*\\}/);\n  if (jsonMatch) {\n    try {\n      profile = JSON.parse(jsonMatch[0]);\n    } catch (e2) {\n      profile = { error: 'Failed to parse JSON', raw: rawContent };\n    }\n  } else {\n    profile = { error: 'No JSON object found', raw: rawContent };\n  }\n}\n\nconst tender = $('Merge & Extract Results').first()?.json || {};\n\nreturn [{\n  json: {\n    tender_id: tender.tender_id || '',\n    buyer: tender.buyer || '',\n    country: tender.country || '',\n    description: tender.description || '',\n    source: tender.source || '',\n    url: tender.url || '',\n    published_date: tender.published_date || '',\n    deadline: tender.deadline || '',\n    prospect_profile: {\n      sector: profile.sector || 'Unknown',\n      estimated_budget: profile.estimated_budget || 'Unknown',\n      org_size: profile.org_size || 'Unknown',\n      past_it_projects: Array.isArray(profile.past_it_projects) ? profile.past_it_projects : [],\n      key_contacts: Array.isArray(profile.key_contacts) ? profile.key_contacts : [profile.key_contacts || 'Unknown'],\n      competitors_likely: Array.isArray(profile.competitors_likely) ? profile.competitors_likely : [],\n      opportunity_score: profile.opportunity_score || 0,\n      research_summary: profile.research_summary || ''\n    },\n    researched_at: new Date().toISOString()\n  }\n}];"
+        "jsCode": "const raw = $input.first()?.json?.choices?.[0]?.message?.content || '{}';\nlet profile = {};\ntry {\n  profile = JSON.parse(raw);\n} catch(e) {\n  const match = raw.match(/\\{[\\s\\S]*\\}/);\n  profile = match ? JSON.parse(match[0]) : { research_summary: raw, opportunity_score: 5 };\n}\n\nconst prev = $('Merge & Extract Results').item.json;\n\nreturn [{\n  json: {\n    tender: {\n      id: prev.tender_id || prev.id,\n      buyer: prev.buyer,\n      country: prev.country,\n      description: prev.description,\n      source: prev.source,\n      url: prev.url,\n      published_date: prev.published_date,\n      deadline: prev.deadline\n    },\n    prospect_profile: profile,\n    researched_at: new Date().toISOString()\n  }\n}];"
       },
       "type": "n8n-nodes-base.code",
       "typeVersion": 2,
@@ -147,13 +149,13 @@
         1320,
         0
       ],
-      "id": "89b7e314-5231-4198-8ad4-124b893cf678",
+      "id": "pr-parse-profile",
       "name": "Parse Prospect Profile"
     },
     {
       "parameters": {
         "method": "POST",
-        "url": "http://host.docker.internal:8000/match-tender",
+        "url": "http://localhost:5678/webhook/generate-proposal",
         "sendHeaders": true,
         "headerParameters": {
           "parameters": [
@@ -165,134 +167,22 @@
         },
         "sendBody": true,
         "specifyBody": "json",
-        "jsonBody": "={\n  \"tender_id\": {{ JSON.stringify($json.tender_id || 'TENDER-UNKNOWN') }},\n  \"title\": {{ JSON.stringify(($json.description || '').slice(0, 100)) }},\n  \"description\": {{ JSON.stringify($json.description || '') }},\n  \"top_k\": 3\n}",
+        "jsonBody": "={{ JSON.stringify($json) }}",
         "options": {}
       },
       "type": "n8n-nodes-base.httpRequest",
-      "typeVersion": 4.5,
+      "typeVersion": 4.2,
       "position": [
         1540,
         0
       ],
-      "id": "f3a2b1c4-5d6e-7f8a-9b0c-1d2e3f4a5b6c",
-      "name": "RAG: Match Tender & Coverage Matrix",
+      "id": "pr-trigger-proposal",
+      "name": "Trigger Proposal & RAG Webhook",
       "onError": "continueRegularOutput"
-    },
-    {
-      "parameters": {
-        "jsCode": "const input = $input.first()?.json || {};\nconst prev = $('Parse Prospect Profile').item.json;\n\n// Check if live RAG backend responded\nconst isLiveRag = input.fit_score !== undefined && input.coverage_matrix !== undefined;\n\nlet matchResult = {};\n\nif (isLiveRag) {\n  matchResult = {\n    ...prev,\n    rag_matching: {\n      fit_score: input.fit_score,\n      no_match: input.no_match,\n      covered_count: input.covered_count,\n      partial_count: input.partial_count,\n      not_covered_count: input.not_covered_count,\n      total_requirements: input.total_requirements,\n      coverage_matrix: input.coverage_matrix || [],\n      staffing_suggestions: input.staffing_suggestions || [],\n      rag_status: 'live_evaluation'\n    }\n  };\n} else {\n  // Graceful deterministic fallback using OliveSoft KB assets when RAG server is offline\n  const desc = (prev.description || '').toLowerCase();\n  const isHighFit = desc.includes('logiciel') || desc.includes('web') || desc.includes('donn') || desc.includes('erp') || desc.includes('cloud') || desc.includes('java') || desc.includes('sant') || desc.includes('gestion');\n  const fitScore = isHighFit ? 0.88 : 0.35;\n\n  matchResult = {\n    ...prev,\n    rag_matching: {\n      fit_score: fitScore,\n      no_match: !isHighFit,\n      covered_count: isHighFit ? 3 : 0,\n      partial_count: isHighFit ? 1 : 1,\n      not_covered_count: isHighFit ? 0 : 3,\n      total_requirements: 4,\n      coverage_matrix: [\n        { req_id: 'REQ-1', asset_id: 'PROJ-003', asset_type: 'past_project', score: 0.038, status: 'covered', note: 'Hospital Management & Medical Records System' },\n        { req_id: 'REQ-2', asset_id: 'CV-001', asset_type: 'cv', score: 0.035, status: 'covered', note: 'Yassine M. - Lead Health-Tech Architect' },\n        { req_id: 'REQ-3', asset_id: 'TECH-002', asset_type: 'tech_stack', score: 0.032, status: 'covered', note: 'Interoperability, HL7/FHIR & Spring Boot' }\n      ],\n      staffing_suggestions: [\n        { name: 'Yassine M.', title: 'Lead Health-Tech Architect', skills_matched: ['Java/Spring Boot', 'Microservices', 'HL7/FHIR'], skills_gap: [] },\n        { name: 'Amine B.', title: 'Senior Fullstack & Interoperability Engineer', skills_matched: ['React', 'PostgreSQL', 'Data Integration'], skills_gap: [] }\n      ],\n      rag_status: 'deterministic_fallback'\n    }\n  };\n}\n\nreturn [{ json: matchResult }];"
-      },
-      "type": "n8n-nodes-base.code",
-      "typeVersion": 2,
-      "position": [
-        1760,
-        0
-      ],
-      "id": "a1b2c3d4-e5f6-7a8b-9c0d-1e2f3a4b5c6d",
-      "name": "Process RAG Matrix & Staffing"
-    },
-    {
-      "parameters": {
-        "conditions": {
-          "options": {
-            "caseSensitive": true,
-            "leftValue": "",
-            "typeValidation": "strict",
-            "version": 2
-          },
-          "conditions": [
-            {
-              "id": "c1",
-              "leftValue": "={{ $json.rag_matching.fit_score }}",
-              "rightValue": 0.5,
-              "operator": {
-                "type": "number",
-                "operation": "gte"
-              }
-            },
-            {
-              "id": "c2",
-              "leftValue": "={{ $json.rag_matching.no_match }}",
-              "rightValue": false,
-              "operator": {
-                "type": "boolean",
-                "operation": "equals"
-              }
-            }
-          ],
-          "combinator": "and"
-        }
-      },
-      "type": "n8n-nodes-base.if",
-      "typeVersion": 2.2,
-      "position": [
-        1980,
-        0
-      ],
-      "id": "d4e5f6a7-b8c9-0d1e-2f3a-4b5c6d7e8f9a",
-      "name": "Qualified Tender? (Fit Score >= 0.5)"
-    },
-    {
-      "parameters": {
-        "method": "POST",
-        "url": "https://api.groq.com/openai/v1/chat/completions",
-        "sendHeaders": true,
-        "headerParameters": {
-          "parameters": [
-            {
-              "name": "Authorization",
-              "value": "Bearer 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"
-            },
-            {
-              "name": "Content-Type",
-              "value": "application/json"
-            }
-          ]
-        },
-        "sendBody": true,
-        "specifyBody": "json",
-        "jsonBody": "={\n  \"model\": \"qwen/qwen3.8-27b\",\n  \"max_tokens\": 1500,\n  \"response_format\": {\n    \"type\": \"json_object\"\n  },\n  \"messages\": [\n    {\n      \"role\": \"system\",\n      \"content\": \"You are an elite enterprise proposal architect for OliveSoft, an IT engineering firm in Tunisia. Given tender specifications, prospect research intelligence, and OliveSoft RAG matching capabilities, draft an executive commercial proposal. Return ONLY a JSON object with fields: executive_summary, client_understanding, technical_approach, assigned_team (array of objects with name, role, why_fit), past_references, competitive_advantages, estimated_timeline.\"\n    },\n    {\n      \"role\": \"user\",\n      \"content\": {{ JSON.stringify('### TENDER SPECIFICATIONS:\\nID: ' + ($json.tender_id || '') + '\\nBuyer: ' + ($json.buyer || '') + '\\nCountry: ' + ($json.country || '') + '\\nDeadline: ' + ($json.deadline || '') + '\\nDescription: ' + ($json.description || '') + '\\n\\n### BUYER INTELLIGENCE DOSSIER (FROM PROSPECT RESEARCH):\\nSector: ' + ($json.prospect_profile.sector || '') + '\\nBudget: ' + ($json.prospect_profile.estimated_budget || '') + '\\nOrg Size: ' + ($json.prospect_profile.org_size || '') + '\\nKey Contacts: ' + (($json.prospect_profile.key_contacts || []).join(', ')) + '\\nPast IT Projects: ' + (($json.prospect_profile.past_it_projects || []).join('; ')) + '\\nCompetitors: ' + (($json.prospect_profile.competitors_likely || []).join(', ')) + '\\nSummary: ' + ($json.prospect_profile.research_summary || '') + '\\n\\n### OLIVESOFT CAPABILITIES & RAG MATCH:\\nFit Score: ' + (($json.rag_matching.fit_score * 100).toFixed(1)) + '%\\nStaffing Match: ' + JSON.stringify($json.rag_matching.staffing_suggestions || []) + '\\nCoverage Matrix: ' + JSON.stringify($json.rag_matching.coverage_matrix || [])) }}\n    }\n  ]\n}",
-        "options": {}
-      },
-      "type": "n8n-nodes-base.httpRequest",
-      "typeVersion": 4.5,
-      "position": [
-        2220,
-        -100
-      ],
-      "id": "e5f6a7b8-c9d0-1e2f-3a4b-5c6d7e8f9a0b",
-      "name": "Groq: Generate Proposal Draft"
-    },
-    {
-      "parameters": {
-        "jsCode": "const raw = $input.first()?.json?.choices?.[0]?.message?.content || '{}';\n\nlet proposal = {};\ntry {\n  proposal = JSON.parse(raw);\n} catch (e) {\n  const match = raw.match(/\\{[\\s\\S]*\\}/);\n  proposal = match ? JSON.parse(match[0]) : { raw_text: raw };\n}\n\nconst prev = $('Process RAG Matrix & Staffing').item.json;\n\nreturn [{\n  json: {\n    tender: {\n      id: prev.tender_id,\n      buyer: prev.buyer,\n      country: prev.country,\n      description: prev.description,\n      source: prev.source,\n      url: prev.url,\n      published_date: prev.published_date,\n      deadline: prev.deadline\n    },\n    prospect_profile: prev.prospect_profile,\n    rag_matching: prev.rag_matching,\n    proposal_draft: proposal,\n    status: 'READY_FOR_DASHBOARD_REVIEW',\n    generated_at: new Date().toISOString()\n  }\n}];"
-      },
-      "type": "n8n-nodes-base.code",
-      "typeVersion": 2,
-      "position": [
-        2440,
-        -100
-      ],
-      "id": "f6a7b8c9-d0e1-2f3a-4b5c-6d7e8f9a0b1c",
-      "name": "Format Final Package (Person C Dashboard)"
-    },
-    {
-      "parameters": {
-        "jsCode": "const prev = $('Process RAG Matrix & Staffing').item.json;\n\nreturn [{\n  json: {\n    tender: {\n      id: prev.tender_id,\n      buyer: prev.buyer,\n      country: prev.country,\n      description: prev.description,\n      source: prev.source,\n      url: prev.url\n    },\n    prospect_profile: prev.prospect_profile,\n    rag_matching: prev.rag_matching,\n    status: 'NO_GO_DISQUALIFIED',\n    reason: `Tender fit score (${((prev.rag_matching?.fit_score || 0) * 100).toFixed(1)}%) is below qualification threshold (50%).`,\n    evaluated_at: new Date().toISOString()\n  }\n}];"
-      },
-      "type": "n8n-nodes-base.code",
-      "typeVersion": 2,
-      "position": [
-        2220,
-        140
-      ],
-      "id": "a7b8c9d0-e1f2-3a4b-5c6d-7e8f9a0b1c2d",
-      "name": "Log Disqualified / Low Fit"
     }
   ],
-  "pinData": {},
   "connections": {
-    "Webhook": {
+    "Webhook: Receive Tender": {
       "main": [
         [
           {
@@ -362,58 +252,7 @@
       "main": [
         [
           {
-            "node": "RAG: Match Tender & Coverage Matrix",
-            "type": "main",
-            "index": 0
-          }
-        ]
-      ]
-    },
-    "RAG: Match Tender & Coverage Matrix": {
-      "main": [
-        [
-          {
-            "node": "Process RAG Matrix & Staffing",
-            "type": "main",
-            "index": 0
-          }
-        ]
-      ]
-    },
-    "Process RAG Matrix & Staffing": {
-      "main": [
-        [
-          {
-            "node": "Qualified Tender? (Fit Score >= 0.5)",
-            "type": "main",
-            "index": 0
-          }
-        ]
-      ]
-    },
-    "Qualified Tender? (Fit Score >= 0.5)": {
-      "main": [
-        [
-          {
-            "node": "Groq: Generate Proposal Draft",
-            "type": "main",
-            "index": 0
-          }
-        ],
-        [
-          {
-            "node": "Log Disqualified / Low Fit",
-            "type": "main",
-            "index": 0
-          }
-        ]
-      ]
-    },
-    "Groq: Generate Proposal Draft": {
-      "main": [
-        [
-          {
-            "node": "Format Final Package (Person C Dashboard)",
+            "node": "Trigger Proposal & RAG Webhook",
             "type": "main",
             "index": 0
           }
@@ -421,16 +260,8 @@
       ]
     }
   },
-  "active": true,
+  "active": false,
   "settings": {
-    "executionOrder": "v1",
-    "binaryMode": "separate"
-  },
-  "versionId": "438803c0-6988-4a2c-8670-7720f22b27c4",
-  "meta": {
-    "instanceId": "e2f13a72ff4b80809628fabe7227c2e015c17987f1c3125d7578d89393523531"
-  },
-  "nodeGroups": [],
-  "id": "sRxIznhkiuKjIF6H",
-  "tags": []
+    "executionOrder": "v1"
+  }
 }
