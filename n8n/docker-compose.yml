@@ -14,6 +14,9 @@ services:
       - N8N_PROTOCOL=http
       - WEBHOOK_URL=http://localhost:5678/
       - GENERIC_TIMEZONE=Africa/Tunis
+      - N8N_BLOCK_ENV_ACCESS_IN_NODE=false
+      - GROQ_API_KEY=${GROQ_API_KEY:-}
+      - SERPER_API_KEY=${SERPER_API_KEY:-}
     volumes:
       - n8n_data:/home/node/.n8n
 

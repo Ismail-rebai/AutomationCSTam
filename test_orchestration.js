@@ -11,8 +11,8 @@
 
 const https = require('https');
 
-const GROQ_KEY = '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';
-const SERPER_KEY = '6b0cfa0eb02029c4266b729ae558a74e6f4776e6';
+const GROQ_KEY = process.env.GROQ_API_KEY || 'YOUR_GROQ_API_KEY';
+const SERPER_KEY = process.env.SERPER_API_KEY || 'YOUR_SERPER_API_KEY';
 
 function postJson(urlStr, data, headers = {}) {
   return new Promise((resolve, reject) => {

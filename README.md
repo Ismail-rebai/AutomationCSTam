@@ -37,6 +37,13 @@
 
 ## 🚀 Quickstart
 
+### 0. Environment Setup (API Keys)
+Create your local `.env` file from the provided template:
+```bash
+copy .env.example .env
+```
+Fill in your free API keys for [Groq](https://console.groq.com/keys) (`GROQ_API_KEY`) and [Serper](https://serper.dev) (`SERPER_API_KEY`).
+
 ### Option 1: 1-Click Launch (Windows)
 Double-click or run:
 ```cmd

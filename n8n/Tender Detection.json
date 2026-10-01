@@ -165,7 +165,7 @@
           "parameters": [
             {
               "name": "Authorization",
-              "value": "Bearer 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"
+              "value": "={{ 'Bearer ' + $env.GROQ_API_KEY }}"
             },
             {
               "name": "Content-Type",
