@@ -1,5 +1,8 @@
-# 🏛️ OliveSoft RFP Intelligence & Automated Proposal Engine
-### *Next-Generation Autonomous Commercial Intelligence for B2B Public Procurement*
+# CSTAM 3.0 — OliveSoft RFP Intelligence & Proposal Generation
+
+**Competition:** IEEE Computer Society Tunisian Annual Meeting (CSTAM 3.0)  
+**Challenge:** CSTAM-OliveSoft — *Automated RFP Intelligence & Commercial Proposal Generation System*  
+**Team Solution:** End-to-End Orchestrated AI Pipeline connecting Multi-Source Tender Detection, Agentic Prospect Research, OliveSoft RAG Capability Matching, Executive Sales Review Dashboard, and Automated Commercial PowerPoint Proposal Generation (.pptx).
 
 [![Competition: CSTAM 3.0](https://img.shields.io/badge/Competition-CSTAM%203.0%20(IEEE%20CS)-00629B?style=for-the-badge&logo=ieee)](https://cstam.ieee.tn/)
 [![Challenge: OliveSoft](https://img.shields.io/badge/Challenge-OliveSoft%20RFP%20Automation-059669?style=for-the-badge)](https://olivesoft.tn/)
@@ -7,21 +10,6 @@
 [![Python](https://img.shields.io/badge/Python-3.10%20%7C%203.11%20%7C%203.12%20%7C%203.14-blue?style=for-the-badge&logo=python)](https://www.python.org/)
 [![FastAPI](https://img.shields.io/badge/Backend-FastAPI%20REST-009688?style=for-the-badge&logo=fastapi)](http://localhost:8000/docs)
 [![n8n Orchestration](https://img.shields.io/badge/Orchestrator-n8n%20Workflow-EA4B71?style=for-the-badge&logo=n8n)](http://localhost:5678/)
-
----
-
-## 📖 Executive Summary
-
-Public procurement in the IT sector is fiercely competitive and notoriously labor-intensive. Software service firms like **OliveSoft** spend hundreds of engineering hours every month manually scanning dispersed procurement portals (such as **AppelOffres.com** and **TED Europa**), deciphering complex 100-page Request for Proposals (RFPs), researching buyer pain points, identifying matching consultant CVs, and formatting commercial proposals.
-
-The **OliveSoft RFP Intelligence Platform** is an enterprise-grade, end-to-end autonomous commercial intelligence system developed for **CSTAM 3.0 (IEEE Computer Society Tunisian Annual Meeting)**. 
-
-It replaces fragmented manual bidding with an **orchestrated 5-stage pipeline**:
-1. **Multi-Source Scraping & Triage:** Crawls tenders and classifies IT relevance via high-speed LLMs.
-2. **Autonomous Agentic Prospect Research:** Discovers buyer pain points, strategic priorities, and decision criteria via live web search.
-3. **Hybrid Cross-Lingual RAG Matching:** Cross-references tenders against **68 internal OliveSoft assets** (CVs, reference projects, client accounts, tech profiles) with Reciprocal Rank Fusion (RRF).
-4. **Executive Sales Review Dashboard:** A modern, glassmorphic UI providing immediate Go/No-Go decisions and capability coverage matrices.
-5. **Automated Presentation Synthesis:** Generates client-ready, 8-slide commercial PowerPoint presentations (`.pptx`) with role-based TND pricing and duration roadmaps in seconds.
 
 ---
 
