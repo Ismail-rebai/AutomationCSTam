@@ -1,0 +1,1922 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>OliveSoft RFP Intelligence & Proposal Dashboard | CSTAM 3.0</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@300;400;500;600;700;800&family=JetBrains+Mono:wght@400;500;600&display=swap" rel="stylesheet">
+  <style>
+    :root {
+      --bg-dark: #0a0e17;
+      --bg-card: rgba(17, 24, 39, 0.75);
+      --bg-card-hover: rgba(30, 41, 59, 0.85);
+      --bg-subtle: rgba(255, 255, 255, 0.03);
+      --border-color: rgba(255, 255, 255, 0.08);
+      --border-focus: rgba(99, 102, 241, 0.5);
+      --text-main: #f8fafc;
+      --text-muted: #94a3b8;
+      --text-sub: #64748b;
+      --brand-olive: #10b981;
+      --brand-olive-glow: rgba(16, 185, 129, 0.25);
+      --brand-indigo: #6366f1;
+      --brand-indigo-glow: rgba(99, 102, 241, 0.25);
+      --brand-purple: #8b5cf6;
+      --brand-cyan: #06b6d4;
+      --brand-amber: #f59e0b;
+      --brand-rose: #ef4444;
+      --radius-lg: 16px;
+      --radius-md: 12px;
+      --radius-sm: 8px;
+      --shadow-card: 0 10px 30px -10px rgba(0, 0, 0, 0.5);
+      --transition: all 0.25s cubic-bezier(0.4, 0, 0.2, 1);
+    }
+
+    * {
+      box-sizing: border-box;
+      margin: 0;
+      padding: 0;
+    }
+
+    body {
+      background-color: var(--bg-dark);
+      background-image: 
+        radial-gradient(at 0% 0%, rgba(99, 102, 241, 0.12) 0px, transparent 50%),
+        radial-gradient(at 100% 100%, rgba(16, 185, 129, 0.08) 0px, transparent 50%),
+        radial-gradient(at 50% 50%, rgba(15, 23, 42, 0.5) 0px, transparent 100%);
+      background-attachment: fixed;
+      color: var(--text-main);
+      font-family: 'Plus Jakarta Sans', system-ui, -apple-system, sans-serif;
+      min-height: 100vh;
+      display: flex;
+      flex-direction: column;
+      overflow-x: hidden;
+    }
+
+    /* Scrollbar */
+    ::-webkit-scrollbar {
+      width: 8px;
+      height: 8px;
+    }
+    ::-webkit-scrollbar-track {
+      background: var(--bg-dark);
+    }
+    ::-webkit-scrollbar-thumb {
+      background: rgba(255, 255, 255, 0.15);
+      border-radius: 4px;
+    }
+    ::-webkit-scrollbar-thumb:hover {
+      background: rgba(255, 255, 255, 0.25);
+    }
+
+    /* Glass Container */
+    .glass-card {
+      background: var(--bg-card);
+      backdrop-filter: blur(16px);
+      -webkit-backdrop-filter: blur(16px);
+      border: 1px solid var(--border-color);
+      border-radius: var(--radius-lg);
+      box-shadow: var(--shadow-card);
+      transition: var(--transition);
+    }
+
+    .glass-card:hover {
+      border-color: rgba(255, 255, 255, 0.14);
+    }
+
+    /* Header Nav */
+    header {
+      border-bottom: 1px solid var(--border-color);
+      background: rgba(10, 14, 23, 0.85);
+      backdrop-filter: blur(12px);
+      position: sticky;
+      top: 0;
+      z-index: 100;
+      padding: 0.85rem 1.75rem;
+    }
+
+    .nav-container {
+      max-width: 1700px;
+      margin: 0 auto;
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      gap: 1.5rem;
+    }
+
+    .brand {
+      display: flex;
+      align-items: center;
+      gap: 0.85rem;
+      text-decoration: none;
+      color: var(--text-main);
+    }
+
+    .brand-icon {
+      width: 42px;
+      height: 42px;
+      border-radius: 10px;
+      background: linear-gradient(135deg, var(--brand-olive) 0%, #059669 100%);
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      box-shadow: 0 0 20px var(--brand-olive-glow);
+    }
+
+    .brand-icon svg {
+      width: 24px;
+      height: 24px;
+      fill: none;
+      stroke: #fff;
+      stroke-width: 2;
+    }
+
+    .brand-title h1 {
+      font-size: 1.15rem;
+      font-weight: 700;
+      letter-spacing: -0.02em;
+      display: flex;
+      align-items: center;
+      gap: 0.5rem;
+    }
+
+    .brand-title .badge-pill {
+      font-size: 0.65rem;
+      padding: 0.15rem 0.5rem;
+      border-radius: 20px;
+      background: rgba(99, 102, 241, 0.2);
+      color: #a5b4fc;
+      border: 1px solid rgba(99, 102, 241, 0.3);
+      font-weight: 600;
+      text-transform: uppercase;
+    }
+
+    .brand-title p {
+      font-size: 0.78rem;
+      color: var(--text-muted);
+    }
+
+    .system-status-pills {
+      display: flex;
+      align-items: center;
+      gap: 0.75rem;
+    }
+
+    .status-pill {
+      display: flex;
+      align-items: center;
+      gap: 0.5rem;
+      font-size: 0.75rem;
+      padding: 0.4rem 0.85rem;
+      background: var(--bg-subtle);
+      border: 1px solid var(--border-color);
+      border-radius: 20px;
+      color: var(--text-muted);
+    }
+
+    .status-dot {
+      width: 8px;
+      height: 8px;
+      border-radius: 50%;
+      background: var(--brand-olive);
+      box-shadow: 0 0 8px var(--brand-olive);
+      animation: pulse-dot 2s infinite;
+    }
+
+    .status-dot.purple {
+      background: var(--brand-purple);
+      box-shadow: 0 0 8px var(--brand-purple);
+    }
+
+    @keyframes pulse-dot {
+      0%, 100% { opacity: 1; transform: scale(1); }
+      50% { opacity: 0.5; transform: scale(0.85); }
+    }
+
+    .btn {
+      display: inline-flex;
+      align-items: center;
+      gap: 0.5rem;
+      padding: 0.55rem 1.1rem;
+      border-radius: var(--radius-sm);
+      font-size: 0.82rem;
+      font-weight: 600;
+      cursor: pointer;
+      text-decoration: none;
+      transition: var(--transition);
+      border: none;
+    }
+
+    .btn-primary {
+      background: linear-gradient(135deg, var(--brand-olive) 0%, #059669 100%);
+      color: #fff;
+      box-shadow: 0 4px 14px var(--brand-olive-glow);
+    }
+
+    .btn-primary:hover {
+      transform: translateY(-2px);
+      box-shadow: 0 6px 20px rgba(16, 185, 129, 0.4);
+    }
+
+    .btn-secondary {
+      background: rgba(255, 255, 255, 0.06);
+      color: var(--text-main);
+      border: 1px solid var(--border-color);
+    }
+
+    .btn-secondary:hover {
+      background: rgba(255, 255, 255, 0.1);
+      border-color: rgba(255, 255, 255, 0.2);
+    }
+
+    /* Main Container */
+    main {
+      max-width: 1700px;
+      width: 100%;
+      margin: 0 auto;
+      padding: 1.5rem 1.75rem 3rem;
+      display: flex;
+      flex-direction: column;
+      gap: 1.5rem;
+      flex: 1;
+    }
+
+    /* KPI Grid */
+    .kpi-grid {
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(240px, 1fr));
+      gap: 1rem;
+    }
+
+    .kpi-card {
+      padding: 1.25rem 1.5rem;
+      display: flex;
+      align-items: center;
+      gap: 1.25rem;
+      position: relative;
+      overflow: hidden;
+    }
+
+    .kpi-card::after {
+      content: "";
+      position: absolute;
+      top: 0;
+      right: 0;
+      width: 80px;
+      height: 80px;
+      background: radial-gradient(circle, rgba(255, 255, 255, 0.04) 0%, transparent 70%);
+      pointer-events: none;
+    }
+
+    .kpi-icon-box {
+      width: 48px;
+      height: 48px;
+      border-radius: var(--radius-md);
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      flex-shrink: 0;
+    }
+
+    .kpi-icon-box.green {
+      background: rgba(16, 185, 129, 0.15);
+      color: var(--brand-olive);
+      border: 1px solid rgba(16, 185, 129, 0.3);
+    }
+
+    .kpi-icon-box.purple {
+      background: rgba(139, 92, 246, 0.15);
+      color: var(--brand-purple);
+      border: 1px solid rgba(139, 92, 246, 0.3);
+    }
+
+    .kpi-icon-box.cyan {
+      background: rgba(6, 182, 212, 0.15);
+      color: var(--brand-cyan);
+      border: 1px solid rgba(6, 182, 212, 0.3);
+    }
+
+    .kpi-icon-box.indigo {
+      background: rgba(99, 102, 241, 0.15);
+      color: var(--brand-indigo);
+      border: 1px solid rgba(99, 102, 241, 0.3);
+    }
+
+    .kpi-info h3 {
+      font-size: 0.76rem;
+      text-transform: uppercase;
+      letter-spacing: 0.05em;
+      color: var(--text-muted);
+      margin-bottom: 0.35rem;
+      font-weight: 600;
+    }
+
+    .kpi-info .kpi-value {
+      font-size: 1.6rem;
+      font-weight: 800;
+      letter-spacing: -0.02em;
+      color: #fff;
+    }
+
+    .kpi-info .kpi-subtitle {
+      font-size: 0.72rem;
+      color: var(--text-sub);
+      margin-top: 0.2rem;
+    }
+
+    /* Split Workspace */
+    .workspace-grid {
+      display: grid;
+      grid-template-columns: 440px 1fr;
+      gap: 1.5rem;
+      align-items: start;
+    }
+
+    @media (max-width: 1200px) {
+      .workspace-grid {
+        grid-template-columns: 1fr;
+      }
+    }
+
+    /* Left Sidebar: Tender Feed */
+    .sidebar-feed {
+      display: flex;
+      flex-direction: column;
+      gap: 1rem;
+    }
+
+    .panel-header {
+      padding: 1.25rem 1.5rem;
+      border-bottom: 1px solid var(--border-color);
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+    }
+
+    .panel-header h2 {
+      font-size: 0.95rem;
+      font-weight: 700;
+      display: flex;
+      align-items: center;
+      gap: 0.5rem;
+    }
+
+    .filter-tabs {
+      display: flex;
+      padding: 0.75rem 1.25rem 0.25rem;
+      gap: 0.5rem;
+      border-bottom: 1px solid var(--border-color);
+    }
+
+    .filter-tab {
+      padding: 0.4rem 0.85rem;
+      border-radius: var(--radius-sm);
+      font-size: 0.75rem;
+      font-weight: 600;
+      color: var(--text-muted);
+      cursor: pointer;
+      background: transparent;
+      border: 1px solid transparent;
+      transition: var(--transition);
+    }
+
+    .filter-tab.active {
+      background: rgba(99, 102, 241, 0.15);
+      color: #c7d2fe;
+      border-color: rgba(99, 102, 241, 0.3);
+    }
+
+    .tender-list {
+      max-height: 720px;
+      overflow-y: auto;
+      padding: 0.85rem;
+      display: flex;
+      flex-direction: column;
+      gap: 0.65rem;
+    }
+
+    .tender-card {
+      padding: 1rem 1.15rem;
+      border-radius: var(--radius-md);
+      background: rgba(255, 255, 255, 0.02);
+      border: 1px solid var(--border-color);
+      cursor: pointer;
+      transition: var(--transition);
+      position: relative;
+    }
+
+    .tender-card:hover {
+      background: rgba(255, 255, 255, 0.05);
+      border-color: rgba(255, 255, 255, 0.18);
+      transform: translateX(4px);
+    }
+
+    .tender-card.active {
+      background: rgba(99, 102, 241, 0.08);
+      border-color: var(--brand-indigo);
+      box-shadow: 0 0 15px rgba(99, 102, 241, 0.2);
+    }
+
+    .tender-card-header {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      gap: 0.5rem;
+      margin-bottom: 0.45rem;
+    }
+
+    .tender-id {
+      font-family: 'JetBrains Mono', monospace;
+      font-size: 0.72rem;
+      font-weight: 600;
+      color: var(--brand-cyan);
+    }
+
+    .score-badge {
+      font-size: 0.7rem;
+      font-weight: 700;
+      padding: 0.15rem 0.55rem;
+      border-radius: 12px;
+      display: flex;
+      align-items: center;
+      gap: 0.35rem;
+    }
+
+    .score-badge.go {
+      background: rgba(16, 185, 129, 0.18);
+      color: #34d399;
+      border: 1px solid rgba(16, 185, 129, 0.35);
+    }
+
+    .score-badge.nogo {
+      background: rgba(239, 68, 68, 0.18);
+      color: #f87171;
+      border: 1px solid rgba(239, 68, 68, 0.35);
+    }
+
+    .tender-card-title {
+      font-size: 0.85rem;
+      font-weight: 600;
+      color: var(--text-main);
+      line-height: 1.35;
+      margin-bottom: 0.4rem;
+    }
+
+    .tender-card-meta {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      font-size: 0.7rem;
+      color: var(--text-sub);
+    }
+
+    /* Right Main Panel */
+    .main-workspace {
+      display: flex;
+      flex-direction: column;
+      gap: 1.5rem;
+    }
+
+    /* Detail Hero */
+    .detail-hero {
+      padding: 1.75rem;
+      display: flex;
+      flex-direction: column;
+      gap: 1.25rem;
+    }
+
+    .hero-top-row {
+      display: flex;
+      justify-content: space-between;
+      align-items: flex-start;
+      gap: 1rem;
+    }
+
+    .hero-title-box h2 {
+      font-size: 1.45rem;
+      font-weight: 800;
+      letter-spacing: -0.02em;
+      line-height: 1.3;
+      margin-bottom: 0.5rem;
+    }
+
+    .hero-tags {
+      display: flex;
+      flex-wrap: wrap;
+      align-items: center;
+      gap: 0.65rem;
+    }
+
+    .meta-tag {
+      font-size: 0.74rem;
+      font-weight: 500;
+      padding: 0.3rem 0.75rem;
+      border-radius: 6px;
+      background: var(--bg-subtle);
+      border: 1px solid var(--border-color);
+      color: var(--text-muted);
+      display: flex;
+      align-items: center;
+      gap: 0.4rem;
+    }
+
+    .meta-tag.source {
+      color: #38bdf8;
+      border-color: rgba(56, 189, 248, 0.3);
+      background: rgba(56, 189, 248, 0.08);
+    }
+
+    .meta-tag.buyer {
+      color: #a7f3d0;
+      border-color: rgba(16, 185, 129, 0.3);
+      background: rgba(16, 185, 129, 0.08);
+    }
+
+    /* Decision Banner with Radial Gauge */
+    .decision-banner {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      gap: 1.5rem;
+      padding: 1.25rem 1.5rem;
+      border-radius: var(--radius-md);
+      background: rgba(16, 185, 129, 0.06);
+      border: 1px solid rgba(16, 185, 129, 0.25);
+    }
+
+    .decision-banner.rejected {
+      background: rgba(239, 68, 68, 0.06);
+      border-color: rgba(239, 68, 68, 0.25);
+    }
+
+    .decision-left {
+      display: flex;
+      align-items: center;
+      gap: 1.25rem;
+    }
+
+    /* SVG Radial Gauge */
+    .gauge-wrapper {
+      position: relative;
+      width: 76px;
+      height: 76px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      flex-shrink: 0;
+    }
+
+    .gauge-svg {
+      transform: rotate(-90deg);
+      width: 76px;
+      height: 76px;
+    }
+
+    .gauge-bg {
+      fill: none;
+      stroke: rgba(255, 255, 255, 0.08);
+      stroke-width: 7;
+    }
+
+    .gauge-fill {
+      fill: none;
+      stroke: var(--brand-olive);
+      stroke-width: 7;
+      stroke-linecap: round;
+      stroke-dasharray: 213;
+      stroke-dashoffset: 20;
+      transition: stroke-dashoffset 0.8s ease;
+    }
+
+    .decision-banner.rejected .gauge-fill {
+      stroke: var(--brand-rose);
+    }
+
+    .gauge-label {
+      position: absolute;
+      font-size: 0.95rem;
+      font-weight: 800;
+      font-family: 'JetBrains Mono', monospace;
+      color: #fff;
+    }
+
+    .verdict-info h4 {
+      font-size: 1.05rem;
+      font-weight: 800;
+      color: #34d399;
+      display: flex;
+      align-items: center;
+      gap: 0.5rem;
+      margin-bottom: 0.25rem;
+    }
+
+    .decision-banner.rejected .verdict-info h4 {
+      color: #f87171;
+    }
+
+    .verdict-info p {
+      font-size: 0.8rem;
+      color: var(--text-muted);
+      line-height: 1.4;
+      max-width: 600px;
+    }
+
+    .coverage-stat-chips {
+      display: flex;
+      gap: 0.65rem;
+    }
+
+    .stat-chip {
+      padding: 0.4rem 0.85rem;
+      border-radius: var(--radius-sm);
+      font-size: 0.72rem;
+      font-weight: 600;
+      background: rgba(0, 0, 0, 0.25);
+      border: 1px solid var(--border-color);
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      gap: 0.15rem;
+    }
+
+    .stat-chip .val {
+      font-size: 0.95rem;
+      font-weight: 800;
+      font-family: 'JetBrains Mono', monospace;
+    }
+
+    .stat-chip.green .val { color: var(--brand-olive); }
+    .stat-chip.amber .val { color: var(--brand-amber); }
+    .stat-chip.red .val { color: var(--brand-rose); }
+
+    /* Prospect Intelligence Dossier Card */
+    .prospect-card {
+      padding: 1.5rem;
+      position: relative;
+      overflow: hidden;
+      border-color: rgba(139, 92, 246, 0.25);
+      background: linear-gradient(180deg, rgba(139, 92, 246, 0.04) 0%, rgba(17, 24, 39, 0.75) 100%);
+    }
+
+    .prospect-card-header {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      margin-bottom: 1.25rem;
+    }
+
+    .prospect-card-header h3 {
+      font-size: 0.95rem;
+      font-weight: 700;
+      display: flex;
+      align-items: center;
+      gap: 0.5rem;
+      color: #c4b5fd;
+    }
+
+    .agent-tag {
+      font-size: 0.68rem;
+      padding: 0.25rem 0.6rem;
+      border-radius: 20px;
+      background: rgba(139, 92, 246, 0.2);
+      color: #ddd6fe;
+      border: 1px solid rgba(139, 92, 246, 0.4);
+      font-weight: 600;
+    }
+
+    .prospect-grid {
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(280px, 1fr));
+      gap: 1.25rem;
+    }
+
+    .dossier-block {
+      background: rgba(0, 0, 0, 0.2);
+      border: 1px solid var(--border-color);
+      border-radius: var(--radius-md);
+      padding: 1rem;
+    }
+
+    .dossier-block h4 {
+      font-size: 0.74rem;
+      text-transform: uppercase;
+      letter-spacing: 0.04em;
+      color: var(--text-muted);
+      margin-bottom: 0.65rem;
+      display: flex;
+      align-items: center;
+      gap: 0.4rem;
+    }
+
+    .dossier-list {
+      list-style: none;
+      display: flex;
+      flex-direction: column;
+      gap: 0.45rem;
+    }
+
+    .dossier-list li {
+      font-size: 0.8rem;
+      color: #e2e8f0;
+      line-height: 1.4;
+      display: flex;
+      align-items: flex-start;
+      gap: 0.45rem;
+    }
+
+    .dossier-list li::before {
+      content: "•";
+      color: var(--brand-purple);
+      font-weight: bold;
+      font-size: 1rem;
+      line-height: 1;
+    }
+
+    /* Coverage Matrix Table */
+    .matrix-section {
+      padding: 1.5rem;
+    }
+
+    .section-title-bar {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      margin-bottom: 1.15rem;
+    }
+
+    .section-title-bar h3 {
+      font-size: 1.05rem;
+      font-weight: 700;
+      display: flex;
+      align-items: center;
+      gap: 0.5rem;
+    }
+
+    .table-container {
+      overflow-x: auto;
+      border-radius: var(--radius-md);
+      border: 1px solid var(--border-color);
+    }
+
+    table.matrix-table {
+      width: 100%;
+      border-collapse: collapse;
+      font-size: 0.82rem;
+      text-align: left;
+    }
+
+    table.matrix-table th {
+      background: rgba(255, 255, 255, 0.04);
+      padding: 0.85rem 1rem;
+      font-weight: 700;
+      color: var(--text-muted);
+      text-transform: uppercase;
+      font-size: 0.7rem;
+      letter-spacing: 0.05em;
+      border-bottom: 1px solid var(--border-color);
+    }
+
+    table.matrix-table td {
+      padding: 1rem;
+      border-bottom: 1px solid var(--border-color);
+      vertical-align: middle;
+      color: var(--text-main);
+    }
+
+    table.matrix-table tr:last-child td {
+      border-bottom: none;
+    }
+
+    table.matrix-table tr:hover td {
+      background: rgba(255, 255, 255, 0.02);
+    }
+
+    .req-code {
+      font-family: 'JetBrains Mono', monospace;
+      font-weight: 600;
+      color: var(--brand-cyan);
+      font-size: 0.74rem;
+    }
+
+    .status-badge-cell {
+      display: inline-flex;
+      align-items: center;
+      gap: 0.35rem;
+      padding: 0.25rem 0.65rem;
+      border-radius: 12px;
+      font-size: 0.68rem;
+      font-weight: 700;
+      text-transform: uppercase;
+      letter-spacing: 0.03em;
+    }
+
+    .status-badge-cell.covered {
+      background: rgba(16, 185, 129, 0.15);
+      color: #34d399;
+      border: 1px solid rgba(16, 185, 129, 0.35);
+    }
+
+    .status-badge-cell.partial {
+      background: rgba(245, 158, 11, 0.15);
+      color: #fbbf24;
+      border: 1px solid rgba(245, 158, 11, 0.35);
+    }
+
+    .status-badge-cell.not_covered {
+      background: rgba(239, 68, 68, 0.15);
+      color: #f87171;
+      border: 1px solid rgba(239, 68, 68, 0.35);
+    }
+
+    .matched-asset-tag {
+      display: inline-flex;
+      align-items: center;
+      gap: 0.35rem;
+      font-size: 0.76rem;
+      padding: 0.25rem 0.6rem;
+      border-radius: 6px;
+      background: rgba(255, 255, 255, 0.04);
+      border: 1px solid var(--border-color);
+      color: #cbd5e1;
+      margin: 0.15rem 0;
+    }
+
+    /* Staffing Squad */
+    .staffing-section {
+      padding: 1.5rem;
+    }
+
+    .staff-cards-grid {
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(280px, 1fr));
+      gap: 1rem;
+    }
+
+    .staff-card {
+      background: rgba(0, 0, 0, 0.25);
+      border: 1px solid var(--border-color);
+      border-radius: var(--radius-md);
+      padding: 1.25rem;
+      display: flex;
+      flex-direction: column;
+      gap: 0.75rem;
+      transition: var(--transition);
+    }
+
+    .staff-card:hover {
+      border-color: rgba(99, 102, 241, 0.4);
+      transform: translateY(-2px);
+    }
+
+    .staff-header {
+      display: flex;
+      align-items: center;
+      gap: 0.85rem;
+    }
+
+    .staff-avatar {
+      width: 44px;
+      height: 44px;
+      border-radius: 50%;
+      background: linear-gradient(135deg, #4f46e5 0%, #7c3aed 100%);
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-weight: 700;
+      font-size: 0.95rem;
+      color: #fff;
+      flex-shrink: 0;
+      border: 2px solid rgba(255, 255, 255, 0.1);
+    }
+
+    .staff-meta h4 {
+      font-size: 0.9rem;
+      font-weight: 700;
+      color: #fff;
+    }
+
+    .staff-meta p {
+      font-size: 0.74rem;
+      color: var(--text-muted);
+    }
+
+    .skills-pills {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 0.4rem;
+    }
+
+    .skill-pill {
+      font-size: 0.68rem;
+      padding: 0.15rem 0.5rem;
+      border-radius: 4px;
+      background: rgba(99, 102, 241, 0.12);
+      color: #c7d2fe;
+      border: 1px solid rgba(99, 102, 241, 0.25);
+    }
+
+    /* Proposal & Deck Deliverable */
+    .proposal-deliverable-card {
+      padding: 1.75rem;
+      background: linear-gradient(135deg, rgba(16, 185, 129, 0.06) 0%, rgba(99, 102, 241, 0.06) 100%);
+      border: 1px solid rgba(16, 185, 129, 0.3);
+      position: relative;
+    }
+
+    .proposal-content-row {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      flex-wrap: wrap;
+      gap: 1.5rem;
+    }
+
+    .proposal-figures {
+      display: flex;
+      align-items: center;
+      gap: 2rem;
+    }
+
+    .figure-item h5 {
+      font-size: 0.72rem;
+      text-transform: uppercase;
+      letter-spacing: 0.05em;
+      color: var(--text-muted);
+      margin-bottom: 0.25rem;
+    }
+
+    .figure-item .fig-val {
+      font-size: 1.45rem;
+      font-weight: 800;
+      font-family: 'JetBrains Mono', monospace;
+      color: #34d399;
+    }
+
+    .btn-download-deck {
+      display: inline-flex;
+      align-items: center;
+      gap: 0.75rem;
+      padding: 0.85rem 1.6rem;
+      border-radius: var(--radius-md);
+      font-size: 0.95rem;
+      font-weight: 700;
+      background: linear-gradient(135deg, #10b981 0%, #059669 100%);
+      color: #fff;
+      text-decoration: none;
+      box-shadow: 0 8px 24px var(--brand-olive-glow);
+      transition: var(--transition);
+      border: none;
+      cursor: pointer;
+    }
+
+    .btn-download-deck:hover {
+      transform: translateY(-2px);
+      box-shadow: 0 12px 30px rgba(16, 185, 129, 0.45);
+    }
+
+    .btn-download-deck svg {
+      width: 20px;
+      height: 20px;
+    }
+
+    /* Modal for Live Testing */
+    .modal-backdrop {
+      display: none;
+      position: fixed;
+      top: 0;
+      left: 0;
+      width: 100%;
+      height: 100%;
+      background: rgba(0, 0, 0, 0.75);
+      backdrop-filter: blur(8px);
+      z-index: 200;
+      align-items: center;
+      justify-content: center;
+      padding: 1.5rem;
+    }
+
+    .modal-backdrop.show {
+      display: flex;
+    }
+
+    .modal-box {
+      width: 100%;
+      max-width: 650px;
+      background: #111827;
+      border: 1px solid var(--border-color);
+      border-radius: var(--radius-lg);
+      padding: 1.75rem;
+      box-shadow: 0 20px 50px rgba(0,0,0,0.8);
+      position: relative;
+    }
+
+    .modal-header {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      margin-bottom: 1.25rem;
+    }
+
+    .modal-header h3 {
+      font-size: 1.15rem;
+      font-weight: 700;
+    }
+
+    .modal-close {
+      background: transparent;
+      border: none;
+      color: var(--text-muted);
+      cursor: pointer;
+      font-size: 1.25rem;
+    }
+
+    .form-group {
+      margin-bottom: 1.15rem;
+    }
+
+    .form-group label {
+      display: block;
+      font-size: 0.78rem;
+      font-weight: 600;
+      color: var(--text-muted);
+      margin-bottom: 0.45rem;
+    }
+
+    .form-control {
+      width: 100%;
+      background: rgba(0, 0, 0, 0.35);
+      border: 1px solid var(--border-color);
+      border-radius: var(--radius-sm);
+      padding: 0.75rem;
+      color: #fff;
+      font-family: inherit;
+      font-size: 0.85rem;
+      outline: none;
+      transition: var(--transition);
+    }
+
+    .form-control:focus {
+      border-color: var(--brand-indigo);
+      box-shadow: 0 0 10px rgba(99, 102, 241, 0.3);
+    }
+
+    textarea.form-control {
+      min-height: 120px;
+      resize: vertical;
+    }
+
+    /* Slide Preview Cards */
+    .slide-carousel-preview {
+      display: grid;
+      grid-template-columns: repeat(4, 1fr);
+      gap: 0.85rem;
+      margin-top: 1.25rem;
+    }
+
+    @media (max-width: 900px) {
+      .slide-carousel-preview {
+        grid-template-columns: repeat(2, 1fr);
+      }
+    }
+
+    .slide-mini-card {
+      background: rgba(0, 0, 0, 0.3);
+      border: 1px solid var(--border-color);
+      border-radius: var(--radius-sm);
+      padding: 0.75rem;
+      display: flex;
+      flex-direction: column;
+      gap: 0.35rem;
+    }
+
+    .slide-mini-card .slide-num {
+      font-size: 0.65rem;
+      font-family: 'JetBrains Mono', monospace;
+      color: var(--brand-olive);
+      font-weight: 600;
+    }
+
+    .slide-mini-card .slide-title {
+      font-size: 0.75rem;
+      font-weight: 600;
+      color: #e2e8f0;
+    }
+
+    /* Footer */
+    footer {
+      border-top: 1px solid var(--border-color);
+      padding: 1.25rem 1.75rem;
+      text-align: center;
+      font-size: 0.75rem;
+      color: var(--text-sub);
+    }
+  </style>
+</head>
+<body>
+
+  <!-- Header -->
+  <header>
+    <div class="nav-container">
+      <a href="#" class="brand">
+        <div class="brand-icon">
+          <svg viewBox="0 0 24 24">
+            <path d="M12 2L2 7l10 5 10-5-10-5zM2 17l10 5 10-5M2 12l10 5 10-5"/>
+          </svg>
+        </div>
+        <div class="brand-title">
+          <h1>OliveSoft RFP Intelligence <span class="badge-pill">CSTAM 3.0</span></h1>
+          <p>Autonomous Tender Detection, Agentic Prospect Research & Proposal Engine</p>
+        </div>
+      </a>
+
+      <div class="system-status-pills">
+        <div class="status-pill">
+          <div class="status-dot"></div>
+          <span><strong>RAG Index:</strong> 68 KB Assets (Hybrid Qdrant + BM25)</span>
+        </div>
+        <div class="status-pill">
+          <div class="status-dot purple"></div>
+          <span><strong>Orchestrator:</strong> n8n Master Pipeline</span>
+        </div>
+      </div>
+
+      <div style="display: flex; gap: 0.75rem;">
+        <button class="btn btn-secondary" onclick="openLiveTesterModal()">
+          <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+            <polygon points="5 3 19 12 5 21 5 3"></polygon>
+          </svg>
+          Test Live Custom Tender
+        </button>
+        <a href="/docs" target="_blank" class="btn btn-secondary">
+          <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+            <path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"></path>
+            <polyline points="14 2 14 8 20 8"></polyline>
+          </svg>
+          FastAPI Docs (:8000)
+        </a>
+      </div>
+    </div>
+  </header>
+
+  <!-- Main Body -->
+  <main>
+
+    <!-- KPI Cards Ribbon -->
+    <div class="kpi-grid">
+      <div class="glass-card kpi-card">
+        <div class="kpi-icon-box cyan">
+          <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+            <path d="M22 19a2 2 0 0 1-2 2H4a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h5l2 3h9a2 2 0 0 1 2 2z"></path>
+          </svg>
+        </div>
+        <div class="kpi-info">
+          <h3>Analyzed Tenders</h3>
+          <div class="kpi-value" id="kpi-total-tenders">8 RFPs</div>
+          <div class="kpi-subtitle">7 Qualified • 1 Disqualified (Negative Control)</div>
+        </div>
+      </div>
+
+      <div class="glass-card kpi-card">
+        <div class="kpi-icon-box green">
+          <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+            <polyline points="20 6 9 17 4 12"></polyline>
+          </svg>
+        </div>
+        <div class="kpi-info">
+          <h3>Qualification Rate</h3>
+          <div class="kpi-value" id="kpi-qual-rate">87.5%</div>
+          <div class="kpi-subtitle">Threshold: Fit Score &ge; 50%</div>
+        </div>
+      </div>
+
+      <div class="glass-card kpi-card">
+        <div class="kpi-icon-box purple">
+          <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+            <line x1="12" y1="1" x2="12" y2="23"></line>
+            <path d="M17 5H9.5a3.5 3.5 0 0 0 0 7h5a3.5 3.5 0 0 1 0 7H6"></path>
+          </svg>
+        </div>
+        <div class="kpi-info">
+          <h3>Commercial Pipeline</h3>
+          <div class="kpi-value" id="kpi-pipeline-val">927,700 TND</div>
+          <div class="kpi-subtitle">Total Estimated Proposal Value</div>
+        </div>
+      </div>
+
+      <div class="glass-card kpi-card">
+        <div class="kpi-icon-box indigo">
+          <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+            <circle cx="12" cy="12" r="10"></circle>
+            <polyline points="12 6 12 12 16 14"></polyline>
+          </svg>
+        </div>
+        <div class="kpi-info">
+          <h3>RAG Match Latency</h3>
+          <div class="kpi-value">&lt; 12 ms</div>
+          <div class="kpi-subtitle">Hybrid Dense + Lexical Fusion (RRF)</div>
+        </div>
+      </div>
+    </div>
+
+    <!-- Main Workspace Split -->
+    <div class="workspace-grid">
+
+      <!-- Left Sidebar: Tender Selector -->
+      <aside class="sidebar-feed">
+        <div class="glass-card">
+          <div class="panel-header">
+            <h2>
+              <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                <rect x="3" y="4" width="18" height="18" rx="2" ry="2"></rect>
+                <line x1="16" y1="2" x2="16" y2="6"></line>
+                <line x1="8" y1="2" x2="8" y2="6"></line>
+                <line x1="3" y1="10" x2="21" y2="10"></line>
+              </svg>
+              Detected Tender Pipeline
+            </h2>
+            <span style="font-size: 0.72rem; color: var(--text-sub);" id="tender-count-badge">8 items</span>
+          </div>
+
+          <div class="filter-tabs">
+            <button class="filter-tab active" onclick="filterTenders('all', this)">All (8)</button>
+            <button class="filter-tab" onclick="filterTenders('qualified', this)">Qualified (7)</button>
+            <button class="filter-tab" onclick="filterTenders('disqualified', this)">Disqualified (1)</button>
+          </div>
+
+          <div class="tender-list" id="tender-list-container">
+            <!-- Dynamic tender cards rendered via JS -->
+          </div>
+        </div>
+      </aside>
+
+      <!-- Right Column: Active Tender Full Intelligence -->
+      <section class="main-workspace">
+
+        <!-- Active Tender Hero & Decision Card -->
+        <div class="glass-card detail-hero">
+          <div class="hero-top-row">
+            <div class="hero-title-box">
+              <div class="hero-tags" style="margin-bottom: 0.65rem;">
+                <span class="meta-tag buyer" id="active-buyer">Ministère de la Santé</span>
+                <span class="meta-tag" id="active-id">AO-2026-TN-042</span>
+                <span class="meta-tag source" id="active-source">appeloffres.com</span>
+                <span class="meta-tag" id="active-deadline">Deadline: 2026-11-15</span>
+              </div>
+              <h2 id="active-title">Mise en place d'un système national d'information hospitalier et dossiers médicaux partagés</h2>
+            </div>
+          </div>
+
+          <p style="font-size: 0.85rem; color: #cbd5e1; line-height: 1.5;" id="active-desc">
+            Mise en place d'un système national d'information hospitalier (SIH) et dossiers médicaux partagés (DMP) pour les établissements publics de santé. Lot 1: Dossier Patient Informatisé (DPI) et interopérabilité HL7/FHIR. Lot 2: Portail praticiens et portail patient sécurisé (SSO, RGPD). Lot 3: Infrastructure cloud hybride et haute disponibilité.
+          </p>
+
+          <!-- Decision Verdict Banner -->
+          <div class="decision-banner" id="active-decision-banner">
+            <div class="decision-left">
+              <div class="gauge-wrapper">
+                <svg class="gauge-svg" viewBox="0 0 76 76">
+                  <circle class="gauge-bg" cx="38" cy="38" r="34"></circle>
+                  <circle class="gauge-fill" id="gauge-circle" cx="38" cy="38" r="34"></circle>
+                </svg>
+                <div class="gauge-label" id="gauge-score-text">92%</div>
+              </div>
+              <div class="verdict-info">
+                <h4 id="verdict-title">
+                  <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                    <path d="M22 11.08V12a10 10 0 1 1-5.93-9.14"></path>
+                    <polyline points="22 4 12 14.01 9 11.01"></polyline>
+                  </svg>
+                  GO &mdash; HIGH CAPABILITY MATCH
+                </h4>
+                <p id="verdict-desc">
+                  OliveSoft displays strong matching references across healthcare SIH architecture, e-Gov citizen authentication portals, and HL7/FHIR microservices.
+                </p>
+              </div>
+            </div>
+
+            <div class="coverage-stat-chips">
+              <div class="stat-chip green">
+                <span class="val" id="chip-covered">4</span>
+                <span>Covered</span>
+              </div>
+              <div class="stat-chip amber">
+                <span class="val" id="chip-partial">0</span>
+                <span>Partial</span>
+              </div>
+              <div class="stat-chip red">
+                <span class="val" id="chip-gaps">0</span>
+                <span>Gaps</span>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <!-- Agentic Prospect Dossier (Phase 1 Agent) -->
+        <div class="glass-card prospect-card">
+          <div class="prospect-card-header">
+            <h3>
+              <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                <circle cx="12" cy="12" r="10"></circle>
+                <path d="M12 16v-4"></path>
+                <path d="M12 8h.01"></path>
+              </svg>
+              Agentic Prospect Research Dossier
+            </h3>
+            <span class="agent-tag">Autonomous Research Agent (Serper + Groq)</span>
+          </div>
+
+          <div class="prospect-grid">
+            <div class="dossier-block">
+              <h4>
+                <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                  <polygon points="12 2 15.09 8.26 22 9.27 17 14.14 18.18 21.02 12 17.77 5.82 21.02 7 14.14 2 9.27 8.91 8.26 12 2"></polygon>
+                </svg>
+                Strategic Priorities & Goals
+              </h4>
+              <ul class="dossier-list" id="dossier-goals">
+                <!-- Injected via JS -->
+              </ul>
+            </div>
+
+            <div class="dossier-block">
+              <h4>
+                <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                  <circle cx="12" cy="12" r="10"></circle>
+                  <line x1="12" y1="8" x2="12" y2="12"></line>
+                  <line x1="12" y1="16" x2="12.01" y2="16"></line>
+                </svg>
+                Domain Pain Points
+              </h4>
+              <ul class="dossier-list" id="dossier-pain">
+                <!-- Injected via JS -->
+              </ul>
+            </div>
+
+            <div class="dossier-block">
+              <h4>
+                <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                  <path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"></path>
+                  <circle cx="9" cy="7" r="4"></circle>
+                  <path d="M23 21v-2a4 4 0 0 0-3-3.87"></path>
+                  <path d="M16 3.13a4 4 0 0 1 0 7.75"></path>
+                </svg>
+                Key Ecosystem & Partners
+              </h4>
+              <ul class="dossier-list" id="dossier-partners">
+                <!-- Injected via JS -->
+              </ul>
+              <div style="margin-top: 0.75rem; font-size: 0.75rem; color: var(--text-sub);">
+                <strong>Procurement Criteria:</strong> <span id="dossier-criteria">40% Tech / 30% Past Projects / 30% Financial</span>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <!-- RAG Requirement Coverage Matrix Table -->
+        <div class="glass-card matrix-section">
+          <div class="section-title-bar">
+            <h3>
+              <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                <rect x="3" y="3" width="18" height="18" rx="2" ry="2"></rect>
+                <line x1="3" y1="9" x2="21" y2="9"></line>
+                <line x1="9" y1="21" x2="9" y2="9"></line>
+              </svg>
+              Requirement-by-Asset Coverage Matrix
+            </h3>
+            <span style="font-size: 0.75rem; color: var(--text-sub);">
+              Indexed over 68 OliveSoft internal assets (24 CVs, 14 Projects, 8 Clients, 22 Tech Profiles)
+            </span>
+          </div>
+
+          <div class="table-container">
+            <table class="matrix-table">
+              <thead>
+                <tr>
+                  <th style="width: 100px;">Req ID</th>
+                  <th>Requirement Description</th>
+                  <th style="width: 130px;">Coverage Status</th>
+                  <th>Matched OliveSoft CV</th>
+                  <th>Matched Past Project &amp; Client</th>
+                  <th>Tech Stack Alignment</th>
+                </tr>
+              </thead>
+              <tbody id="matrix-tbody">
+                <!-- Rows injected via JS -->
+              </tbody>
+            </table>
+          </div>
+        </div>
+
+        <!-- Staffing Recommendations -->
+        <div class="glass-card staffing-section" id="staffing-container-card">
+          <div class="section-title-bar">
+            <h3>
+              <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                <path d="M16 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"></path>
+                <circle cx="8.5" cy="7" r="4"></circle>
+                <line x1="20" y1="8" x2="20" y2="14"></line>
+                <line x1="23" y1="11" x2="17" y2="11"></line>
+              </svg>
+              Assigned OliveSoft Staffing Squad
+            </h3>
+            <span style="font-size: 0.75rem; color: var(--text-sub);">
+              Automated skill-to-requirement assignment algorithm
+            </span>
+          </div>
+
+          <div class="staff-cards-grid" id="staff-grid">
+            <!-- Staff cards injected via JS -->
+          </div>
+        </div>
+
+        <!-- Commercial Deck & PowerPoint Export (Phase 2 & Phase 3) -->
+        <div class="glass-card proposal-deliverable-card" id="proposal-deliverable-card">
+          <div class="proposal-content-row">
+            <div>
+              <span class="badge-pill" style="margin-bottom: 0.5rem; display: inline-block;">Automated Deliverable (.pptx)</span>
+              <h3 style="font-size: 1.25rem; font-weight: 800; color: #fff; margin-bottom: 0.35rem;">
+                Executive Commercial Proposal Presentation
+              </h3>
+              <p style="font-size: 0.82rem; color: var(--text-muted); max-width: 580px;">
+                Synthesized 8-slide executive pitch deck with role-based TND pricing, 5-phase delivery roadmap, architecture blueprint, and OliveSoft references.
+              </p>
+            </div>
+
+            <div class="proposal-figures">
+              <div class="figure-item">
+                <h5>Estimated Pricing</h5>
+                <div class="fig-val" id="prop-price">158,400 TND</div>
+              </div>
+              <div class="figure-item">
+                <h5>Duration</h5>
+                <div class="fig-val" id="prop-duration">22 Weeks</div>
+              </div>
+              <div class="figure-item">
+                <h5>Phases</h5>
+                <div class="fig-val" id="prop-phases">5 Phases</div>
+              </div>
+            </div>
+
+            <div>
+              <button class="btn-download-deck" id="btn-download-action" onclick="downloadActivePresentation()">
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                  <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"></path>
+                  <polyline points="7 10 12 15 17 10"></polyline>
+                  <line x1="12" y1="15" x2="12" y2="3"></line>
+                </svg>
+                Download Deck (.pptx)
+              </button>
+            </div>
+          </div>
+
+          <!-- Slide Carousel Preview -->
+          <div class="slide-carousel-preview">
+            <div class="slide-mini-card">
+              <span class="slide-num">SLIDE 01</span>
+              <span class="slide-title">Executive Cover &amp; OliveSoft Identity</span>
+            </div>
+            <div class="slide-mini-card">
+              <span class="slide-num">SLIDE 02</span>
+              <span class="slide-title">Context &amp; Needs Understanding</span>
+            </div>
+            <div class="slide-mini-card">
+              <span class="slide-num">SLIDE 03</span>
+              <span class="slide-title">Perimeter &amp; Scope of Work</span>
+            </div>
+            <div class="slide-mini-card">
+              <span class="slide-num">SLIDE 04</span>
+              <span class="slide-title">Target Technical Architecture</span>
+            </div>
+            <div class="slide-mini-card">
+              <span class="slide-num">SLIDE 05</span>
+              <span class="slide-title">RAG Coverage Matrix</span>
+            </div>
+            <div class="slide-mini-card">
+              <span class="slide-num">SLIDE 06</span>
+              <span class="slide-title">Staffing &amp; Expert Team</span>
+            </div>
+            <div class="slide-mini-card">
+              <span class="slide-num">SLIDE 07</span>
+              <span class="slide-title">5-Phase Realization Roadmap</span>
+            </div>
+            <div class="slide-mini-card">
+              <span class="slide-num">SLIDE 08</span>
+              <span class="slide-title">Commercial Investment &amp; Terms (TND)</span>
+            </div>
+          </div>
+        </div>
+
+      </section>
+    </div>
+  </main>
+
+  <!-- Live Custom Tender Tester Modal -->
+  <div class="modal-backdrop" id="tester-modal">
+    <div class="modal-box">
+      <div class="modal-header">
+        <h3>Live Custom Tender Tester</h3>
+        <button class="modal-close" onclick="closeLiveTesterModal()">&times;</button>
+      </div>
+
+      <div class="form-group">
+        <label>Tender ID or Code</label>
+        <input type="text" id="custom-tender-id" class="form-control" value="CUSTOM-RFP-LIVE" />
+      </div>
+
+      <div class="form-group">
+        <label>Buyer / Organization Name</label>
+        <input type="text" id="custom-buyer" class="form-control" value="Banque Nationale Agricole (BNA)" />
+      </div>
+
+      <div class="form-group">
+        <label>Tender Title</label>
+        <input type="text" id="custom-title" class="form-control" value="Modernisation de la plateforme bancaire digitale et architecture API" />
+      </div>
+
+      <div class="form-group">
+        <label>Raw French Tender Description (Requirements text)</label>
+        <textarea id="custom-desc" class="form-control">Développement et sécurisation d'une nouvelle plateforme mobile et web pour les clients particuliers. Exigences: architecture microservices Java Spring Boot, passerelle d'API sécurisée avec OAuth2, base de données relationnelle Oracle et PostgreSQL, et tests de pénétration avec conformité BCT.</textarea>
+      </div>
+
+      <div style="display: flex; justify-content: flex-end; gap: 0.75rem;">
+        <button class="btn btn-secondary" onclick="closeLiveTesterModal()">Cancel</button>
+        <button class="btn btn-primary" id="btn-run-live" onclick="executeLiveTenderMatching()">
+          <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+            <polygon points="5 3 19 12 5 21 5 3"></polygon>
+          </svg>
+          Run Live RAG Analysis
+        </button>
+      </div>
+
+      <div id="live-tester-results" style="margin-top: 1.25rem; display: none;">
+        <!-- Live result display -->
+      </div>
+    </div>
+  </div>
+
+  <!-- Footer -->
+  <footer>
+    <p>OliveSoft RFP Intelligence Platform &bull; CSTAM 3.0 IEEE Computer Society &bull; Built with FastAPI, Qdrant Hybrid RAG, Groq LLM, python-pptx &amp; n8n Orchestrator</p>
+  </footer>
+
+  <!-- Dashboard JavaScript Logic -->
+  <script>
+    // State
+    let benchmarkTenders = [];
+    let currentTenderId = "AO-2026-TN-042";
+
+    // Fetch initial dataset from backend API
+    async function loadDashboardData() {
+      try {
+        const res = await fetch('/api/benchmark-tenders');
+        if (res.ok) {
+          benchmarkTenders = await res.json();
+        } else {
+          console.warn("Using fallback local benchmark data");
+        }
+      } catch (err) {
+        console.warn("Could not reach /api/benchmark-tenders, using inline state:", err);
+      }
+
+      renderTenderFeed();
+      selectTender(currentTenderId);
+    }
+
+    // Render list of tenders in left sidebar
+    function renderTenderFeed(filter = 'all') {
+      const container = document.getElementById('tender-list-container');
+      container.innerHTML = '';
+
+      const filtered = benchmarkTenders.filter(t => {
+        if (filter === 'qualified') return t.is_qualified;
+        if (filter === 'disqualified') return !t.is_qualified;
+        return true;
+      });
+
+      filtered.forEach(t => {
+        const card = document.createElement('div');
+        card.className = `tender-card ${t.tender_id === currentTenderId ? 'active' : ''}`;
+        card.onclick = () => selectTender(t.tender_id);
+
+        const scorePercent = Math.round(t.fit_score * 100);
+        const scoreClass = t.is_qualified ? 'go' : 'nogo';
+        const scoreText = t.is_qualified ? `${scorePercent}% GO` : `0% NO-GO`;
+
+        card.innerHTML = `
+          <div class="tender-card-header">
+            <span class="tender-id">${t.tender_id}</span>
+            <span class="score-badge ${scoreClass}">${scoreText}</span>
+          </div>
+          <div class="tender-card-title">${t.title}</div>
+          <div class="tender-card-meta">
+            <span>${t.buyer}</span>
+            <span>${t.publication_date}</span>
+          </div>
+        `;
+
+        container.appendChild(card);
+      });
+
+      document.getElementById('tender-count-badge').textContent = `${filtered.length} items`;
+    }
+
+    // Filter tabs
+    function filterTenders(type, btn) {
+      document.querySelectorAll('.filter-tab').forEach(b => b.classList.remove('active'));
+      btn.classList.add('active');
+      renderTenderFeed(type);
+    }
+
+    // Select and inspect a tender
+    function selectTender(tenderId) {
+      currentTenderId = tenderId;
+      const t = benchmarkTenders.find(x => x.tender_id === tenderId) || benchmarkTenders[0];
+      if (!t) return;
+
+      // Update sidebar active card
+      document.querySelectorAll('.tender-card').forEach(el => {
+        const idSpan = el.querySelector('.tender-id');
+        if (idSpan && idSpan.textContent === tenderId) {
+          el.classList.add('active');
+        } else {
+          el.classList.remove('active');
+        }
+      });
+
+      // Update Hero
+      document.getElementById('active-id').textContent = t.tender_id;
+      document.getElementById('active-buyer').textContent = t.buyer;
+      document.getElementById('active-source').textContent = t.source || 'appeloffres.com';
+      document.getElementById('active-deadline').textContent = `Deadline: ${t.submission_deadline || '2026-11-15'}`;
+      document.getElementById('active-title').textContent = t.title;
+      document.getElementById('active-desc').textContent = t.description;
+
+      // Update Decision & Radial Gauge
+      const scorePercent = Math.round(t.fit_score * 100);
+      const gaugeCircle = document.getElementById('gauge-circle');
+      const scoreText = document.getElementById('gauge-score-text');
+      const banner = document.getElementById('active-decision-banner');
+      const verdictTitle = document.getElementById('verdict-title');
+      const verdictDesc = document.getElementById('verdict-desc');
+
+      // SVG circumference is 2 * pi * 34 = 213.6
+      const circumference = 213.6;
+      const offset = circumference - (circumference * t.fit_score);
+      gaugeCircle.style.strokeDashoffset = offset;
+      scoreText.textContent = `${scorePercent}%`;
+
+      if (t.is_qualified) {
+        banner.className = 'decision-banner';
+        verdictTitle.innerHTML = `
+          <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+            <path d="M22 11.08V12a10 10 0 1 1-5.93-9.14"></path>
+            <polyline points="22 4 12 14.01 9 11.01"></polyline>
+          </svg>
+          GO &mdash; HIGH CAPABILITY MATCH (${scorePercent}%)
+        `;
+        verdictDesc.textContent = `OliveSoft displays strong matching references across ${t.sector} architecture, proven engineers, and certified project deliverables.`;
+      } else {
+        banner.className = 'decision-banner rejected';
+        verdictTitle.innerHTML = `
+          <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+            <circle cx="12" cy="12" r="10"></circle>
+            <line x1="15" y1="9" x2="9" y2="15"></line>
+            <line x1="9" y1="9" x2="15" y2="15"></line>
+          </svg>
+          NO-GO &mdash; AUTOMATICALLY DISQUALIFIED (0.0%)
+        `;
+        verdictDesc.textContent = "Out-of-Scope Negative Control: Requirements do not match OliveSoft's digital software engineering competencies. Flagged no_match: true to prevent non-viable bidding.";
+      }
+
+      // Coverage counts
+      const coveredCount = (t.requirements || []).filter(r => r.status === 'covered').length;
+      const partialCount = (t.requirements || []).filter(r => r.status === 'partial').length;
+      const gapsCount = (t.requirements || []).filter(r => r.status === 'not_covered').length;
+
+      document.getElementById('chip-covered').textContent = coveredCount;
+      document.getElementById('chip-partial').textContent = partialCount;
+      document.getElementById('chip-gaps').textContent = gapsCount;
+
+      // Update Prospect Research Dossier
+      const pProfile = t.prospect_profile || {};
+      const goalsList = document.getElementById('dossier-goals');
+      const painList = document.getElementById('dossier-pain');
+      const partnersList = document.getElementById('dossier-partners');
+
+      goalsList.innerHTML = (pProfile.strategic_goals || ['Digital transformation & modernization']).map(g => `<li>${g}</li>`).join('');
+      painList.innerHTML = (pProfile.pain_points || ['Legacy architecture constraints']).map(p => `<li>${p}</li>`).join('');
+      partnersList.innerHTML = (pProfile.key_partners || ['National ministries']).map(pr => `<li>${pr}</li>`).join('');
+      document.getElementById('dossier-criteria').textContent = pProfile.procurement_criteria || '40% Architecture / 35% References / 25% Financial';
+
+      // Update Coverage Matrix Table
+      const tbody = document.getElementById('matrix-tbody');
+      tbody.innerHTML = '';
+      (t.requirements || []).forEach(req => {
+        const tr = document.createElement('tr');
+        const badgeClass = req.status;
+        const badgeText = req.status.replace('_', ' ');
+
+        tr.innerHTML = `
+          <td><span class="req-code">${req.req_id}</span></td>
+          <td style="max-width: 320px; line-height: 1.4;">${req.text}</td>
+          <td><span class="status-badge-cell ${badgeClass}">${badgeText}</span></td>
+          <td><span class="matched-asset-tag">👤 ${req.matched_cv || 'None'}</span></td>
+          <td><span class="matched-asset-tag">🏢 ${req.matched_project || 'None'}</span></td>
+          <td><span class="matched-asset-tag">🛠️ ${req.matched_tech || 'None'}</span></td>
+        `;
+        tbody.appendChild(tr);
+      });
+
+      // Update Staffing Squad
+      const staffGrid = document.getElementById('staff-grid');
+      const staffCardWrapper = document.getElementById('staffing-container-card');
+      staffGrid.innerHTML = '';
+
+      if (!t.staffing || t.staffing.length === 0) {
+        staffCardWrapper.style.display = 'none';
+      } else {
+        staffCardWrapper.style.display = 'block';
+        t.staffing.forEach(st => {
+          const initials = st.name.split(' ').map(n => n[0]).join('').substring(0, 2);
+          const sCard = document.createElement('div');
+          sCard.className = 'staff-card';
+          sCard.innerHTML = `
+            <div class="staff-header">
+              <div class="staff-avatar">${initials}</div>
+              <div class="staff-meta">
+                <h4>${st.name}</h4>
+                <p>${st.role} &bull; ${st.seniority}</p>
+              </div>
+            </div>
+            <div style="font-size: 0.74rem; color: #a5b4fc; font-weight: 600;">Match Fit: ${st.match_rate}</div>
+            <div class="skills-pills">
+              ${st.skills.map(sk => `<span class="skill-pill">${sk}</span>`).join('')}
+            </div>
+          `;
+          staffGrid.appendChild(sCard);
+        });
+      }
+
+      // Update Proposal Deliverable Card
+      const comm = t.commercial || {};
+      const propCard = document.getElementById('proposal-deliverable-card');
+      if (!t.is_qualified || comm.total_price_tnd === 0) {
+        propCard.style.display = 'none';
+      } else {
+        propCard.style.display = 'block';
+        document.getElementById('prop-price').textContent = `${comm.total_price_tnd.toLocaleString()} TND`;
+        document.getElementById('prop-duration').textContent = `${comm.duration_weeks} Weeks`;
+        document.getElementById('prop-phases').textContent = `${comm.phases_count} Phases`;
+      }
+    }
+
+    // Trigger PPTX Deck Download
+    function downloadActivePresentation() {
+      const t = benchmarkTenders.find(x => x.tender_id === currentTenderId);
+      if (!t || !t.is_qualified) return;
+
+      const btn = document.getElementById('btn-download-action');
+      const originalHTML = btn.innerHTML;
+      btn.innerHTML = `<span style="display:inline-block; animation:spin 1s linear infinite;">⏳</span> Downloading...`;
+
+      // Trigger download via FastAPI endpoint
+      const downloadUrl = `/proposals/download/${t.tender_id}`;
+      window.location.href = downloadUrl;
+
+      setTimeout(() => {
+        btn.innerHTML = originalHTML;
+      }, 1500);
+    }
+
+    // Live Tester Modal controls
+    function openLiveTesterModal() {
+      document.getElementById('tester-modal').classList.add('show');
+    }
+
+    function closeLiveTesterModal() {
+      document.getElementById('tester-modal').classList.remove('show');
+    }
+
+    // Execute Live Matching via FastAPI POST /match-tender
+    async function executeLiveTenderMatching() {
+      const btn = document.getElementById('btn-run-live');
+      const tId = document.getElementById('custom-tender-id').value.trim();
+      const buyer = document.getElementById('custom-buyer').value.trim();
+      const title = document.getElementById('custom-title').value.trim();
+      const desc = document.getElementById('custom-desc').value.trim();
+      const resContainer = document.getElementById('live-tester-results');
+
+      btn.disabled = true;
+      btn.innerHTML = `<span>⏳</span> Running RAG Match...`;
+      resContainer.style.display = 'block';
+      resContainer.innerHTML = `<div style="padding: 1rem; color: #a5b4fc;">Querying Hybrid Qdrant + BM25 index over 68 OliveSoft records...</div>`;
+
+      try {
+        const payload = {
+          tender_id: tId,
+          title: title,
+          description: desc,
+          top_k: 3
+        };
+
+        const resp = await fetch('/match-tender', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify(payload)
+        });
+
+        if (!resp.ok) {
+          throw new Error(`Server returned ${resp.status}`);
+        }
+
+        const data = await resp.json();
+        const scorePercent = Math.round(data.fit_score * 100);
+
+        resContainer.innerHTML = `
+          <div style="background: rgba(16, 185, 129, 0.1); border: 1px solid rgba(16, 185, 129, 0.3); border-radius: 8px; padding: 1rem;">
+            <div style="font-weight: 700; color: #34d399; margin-bottom: 0.5rem; display: flex; align-items: center; justify-content: space-between;">
+              <span>Fit Score: ${scorePercent}% (${data.no_match ? 'NO-GO' : 'QUALIFIED GO'})</span>
+              <span style="font-size: 0.75rem; color: #94a3b8;">${data.covered_count} Covered / ${data.total_requirements} Total</span>
+            </div>
+            <p style="font-size: 0.8rem; color: #cbd5e1; margin-bottom: 0.75rem;">
+              Matched Staff: ${data.staffing_suggestions.map(s => s.name).join(', ') || 'No direct CV match'}
+            </p>
+            <button class="btn btn-primary" style="font-size: 0.75rem; padding: 0.4rem 0.8rem;" onclick="addCustomTenderToDashboard('${tId}', '${buyer}', '${title}', '${desc.replace(/'/g, "\\'")}', ${data.fit_score})">
+              Load into Main Dashboard
+            </button>
+          </div>
+        `;
+      } catch (err) {
+        resContainer.innerHTML = `
+          <div style="background: rgba(239, 68, 68, 0.1); border: 1px solid rgba(239, 68, 68, 0.3); border-radius: 8px; padding: 1rem; color: #f87171;">
+            Live matching error: ${err.message}. Ensure the RAG server is running on :8000.
+          </div>
+        `;
+      } finally {
+        btn.disabled = false;
+        btn.innerHTML = `<polygon points="5 3 19 12 5 21 5 3"></polygon> Run Live RAG Analysis`;
+      }
+    }
+
+    function addCustomTenderToDashboard(id, buyer, title, desc, fitScore) {
+      closeLiveTesterModal();
+      const customItem = {
+        tender_id: id,
+        title: title,
+        buyer: buyer,
+        sector: "Sur Mesure",
+        source: "live_input",
+        publication_date: new Date().toISOString().split('T')[0],
+        submission_deadline: "2026-11-30",
+        budget_scale: "300,000 TND",
+        status: fitScore >= 0.5 ? "QUALIFIED" : "DISQUALIFIED",
+        fit_score: fitScore,
+        is_qualified: fitScore >= 0.5,
+        description: desc,
+        prospect_profile: {
+          buyer_name: buyer,
+          sector: "Secteur Personnalisé",
+          strategic_goals: ["Transformation digitale sur mesure", "Accélération du time-to-market"],
+          pain_points: ["Contraintes d'intégration avec l'infrastructure existante"],
+          key_partners: ["Partenaires technologiques"],
+          procurement_criteria: "40% Technique / 40% Équipe / 20% Prix"
+        },
+        requirements: [
+          {
+            req_id: "REQ-01",
+            text: desc.substring(0, 160) + "...",
+            status: fitScore >= 0.5 ? "covered" : "not_covered",
+            matched_cv: "Slim Ammar (Senior Architect)",
+            matched_project: "Core Banking Modernization",
+            matched_tech: "Java, Spring Boot, Microservices"
+          }
+        ],
+        staffing: [
+          {
+            name: "Slim Ammar",
+            role: "Lead Solutions Architect",
+            seniority: "14 ans d'expérience",
+            match_rate: "95%",
+            skills: ["Architecture", "Java", "Spring Boot", "APIs"]
+          }
+        ],
+        commercial: {
+          total_price_tnd: 125000.0,
+          duration_weeks: 16,
+          phases_count: 5,
+          rate_daily_avg: "680 TND",
+          file_name: ""
+        }
+      };
+
+      benchmarkTenders.unshift(customItem);
+      renderTenderFeed();
+      selectTender(id);
+    }
+
+    // On Load
+    window.addEventListener('DOMContentLoaded', loadDashboardData);
+  </script>
+</body>
+</html>

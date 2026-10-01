@@ -18,9 +18,10 @@ start "OliveSoft n8n Orchestrator (:5678)" cmd /k "cd /d %~dp0 && start_n8n.bat"
 echo.
 echo ========================================================
 echo All services have been launched!
-echo   - RAG Service & Docs:    http://localhost:8000/docs
-echo   - Ingest Service & Docs: http://localhost:8001/docs
-echo   - n8n Workflow UI:       http://localhost:5678/
+echo   - Sales Executive Dashboard: http://localhost:8000/dashboard
+echo   - RAG Service & Docs:        http://localhost:8000/docs
+echo   - Ingest Service & Docs:     http://localhost:8001/docs
+echo   - n8n Workflow UI:           http://localhost:5678/
 echo ========================================================
 echo.
 pause

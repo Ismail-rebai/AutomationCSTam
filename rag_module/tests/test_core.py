@@ -291,6 +291,26 @@ class TestRAGAPI:
         })
         assert resp.status_code == 400
 
+    def test_dashboard_endpoint(self):
+        resp = self.client.get("/dashboard")
+        assert resp.status_code == 200
+        assert "OliveSoft RFP Intelligence" in resp.text
+        assert "text/html" in resp.headers.get("content-type", "")
+
+    def test_root_redirect(self):
+        resp = self.client.get("/", follow_redirects=False)
+        assert resp.status_code in (302, 307)
+        assert resp.headers.get("location") == "/dashboard"
+
+    def test_benchmark_tenders_endpoint(self):
+        resp = self.client.get("/api/benchmark-tenders")
+        assert resp.status_code == 200
+        data = resp.json()
+        assert isinstance(data, list)
+        assert len(data) >= 7
+        assert any(t["tender_id"] == "AO-2026-TN-042" for t in data)
+        assert any(t["tender_id"] == "OUT-OF-SCOPE-AGRI" for t in data)
+
 
 class TestIngestAPI:
     """Test the Ingest API endpoints."""

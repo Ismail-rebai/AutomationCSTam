@@ -14,9 +14,10 @@ from pathlib import Path
 from typing import Any, Dict, List, Optional
 
 from fastapi import FastAPI, HTTPException
-from fastapi.responses import FileResponse
+from fastapi.responses import FileResponse, HTMLResponse, RedirectResponse
 from pydantic import BaseModel, Field
 
+from .dashboard_data import BENCHMARK_TENDERS
 from .documents import KBRecord, load_all_records
 from .embeddings import get_backend
 from .hybrid_index import HybridIndex, SearchResult
@@ -493,6 +494,33 @@ def download_proposal_deck(tender_id: str):
     )
 
 
+# --- Sales & Commercial Review Dashboard (Person C & Phase 3) ---
+
+TEMPLATES_DIR = Path(__file__).parent / "templates"
+
+
+@app.get("/dashboard", response_class=HTMLResponse)
+def get_dashboard():
+    """Serve the OliveSoft RFP Intelligence & Proposal Review Dashboard."""
+    dashboard_file = TEMPLATES_DIR / "dashboard.html"
+    if not dashboard_file.exists():
+        raise HTTPException(status_code=404, detail="Dashboard template not found")
+    return HTMLResponse(content=dashboard_file.read_text(encoding="utf-8"))
+
+
+@app.get("/", response_class=RedirectResponse)
+def root_redirect():
+    """Redirect root to /dashboard."""
+    return RedirectResponse(url="/dashboard")
+
+
+@app.get("/api/benchmark-tenders")
+def list_benchmark_tenders():
+    """Return pre-structured benchmark tenders with prospect dossiers and coverage data."""
+    return BENCHMARK_TENDERS
+
+
 def get_index() -> Optional[HybridIndex]:
     """Get the current index (for testing/scripts)."""
     return _index
+
